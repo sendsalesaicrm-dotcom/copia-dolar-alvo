@@ -316,7 +316,9 @@ const CalendarAporteBigCalendar: React.FC<{
     if (marcado && animState === 'gridVideo') cellBg = 'bg-green-50';
     else if (marcado && animState === 'selo') cellBg = 'bg-green-100';
     return (
-      <div className={`relative aspect-square rounded-2xl text-xs md:text-base flex items-center justify-center transition-colors overflow-hidden ${cellBg}`} style={{ minHeight: 48 }}>
+      <div
+        className={`relative aspect-square min-h-20 rounded-2xl text-xs md:text-base flex items-center justify-center transition-colors overflow-hidden ${cellBg}`}
+      >
         {/* Removido o span da data */}
         {!marcado && (
           <button
@@ -332,7 +334,7 @@ const CalendarAporteBigCalendar: React.FC<{
         )}
         {marcado && animState === 'gridVideo' && (
           <video
-            className="w-full h-full object-contain"
+            className="w-full h-full max-h-full object-contain p-1"
             autoPlay
             muted
             playsInline
@@ -349,12 +351,12 @@ const CalendarAporteBigCalendar: React.FC<{
         )}
         {marcado && animState === 'selo' && (
           <>
-            <img src={"https://pmcupvcxgtjhswijbjbw.supabase.co/storage/v1/object/public/galeria/calendario.svg"} className="w-16 h-16 object-contain animate-bounce" style={{ animationIterationCount: 1, animationDuration: '0.5s' }} />
+            <img src={"https://pmcupvcxgtjhswijbjbw.supabase.co/storage/v1/object/public/galeria/calendario.svg"} className="w-full h-full max-h-full object-contain p-1 animate-bounce" style={{ animationIterationCount: 1, animationDuration: '0.5s' }} />
             <span className="absolute top-2 right-2 text-green-600 font-bold">✓</span>
           </>
         )}
         {marcado && (!animState || animState === 'modal' || animState === 'modalVideo') && (
-          <img src={confirmImageUrl} alt="Porquinho" className="media-content w-14 h-14 sm:w-20 sm:h-20 object-contain" />
+          <img src={confirmImageUrl} alt="Porquinho" className="media-content w-full h-full max-h-full object-contain p-1" />
         )}
       </div>
     );
@@ -384,32 +386,36 @@ const CalendarAporteBigCalendar: React.FC<{
     setCurrentView(view);
   };
 
-  // Estilo para limitar altura e largura dos rbc-row-bg
+  // Estilo responsivo para o calendário
   React.useEffect(() => {
-    const styleId = 'calendar-row-bg-limit';
+    const styleId = 'calendar-responsive-style';
     if (!document.getElementById(styleId)) {
       const style = document.createElement('style');
       style.id = styleId;
       style.innerHTML = `
-        .rbc-month-view .rbc-row-bg {
-          max-height: 130px;
-          max-width: 910px;
-          margin: 0 auto;
-        }
-        /* Remove espaços extras entre as semanas - remove qualquer linha vazia */
-        .rbc-month-view .rbc-row-bg:empty,
-        .rbc-month-view .rbc-row:empty {
-          display: none !important;
-          height: 0 !important;
-          min-height: 0 !important;
-          max-height: 0 !important;
-          margin: 0 !important;
-          padding: 0 !important;
-        }
-        /* Remove padding/margin do container do mês */
+        /* Garante que o calendário ocupe o espaço disponível sem overflow */
         .rbc-month-view {
-          padding-bottom: 0 !important;
-          margin-bottom: 0 !important;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          min-height: 700px !important;
+          height: 700px !important;
+        }
+
+        /* Faz com que cada linha de semana tenha o mesmo peso proporcional */
+        .rbc-month-row {
+          flex: 1 0 0px;
+          min-height: 80px;
+        }
+
+        /* Ajusta o conteúdo para não vazar da célula */
+        .rbc-row-content {
+          height: 100%;
+        }
+
+        /* Remove bordas duplas e ajusta estética */
+        .rbc-off-range-bg {
+          background: rgba(0,0,0,0.02);
         }
       `;
       document.head.appendChild(style);
@@ -422,13 +428,14 @@ const CalendarAporteBigCalendar: React.FC<{
 
   return (
     <div className="w-full flex justify-center items-center">
-      <div className="w-full aspect-square max-w-4xl mx-auto">
+      {/* Corrigido: altura automática para o calendário não sumir */}
+      <div className="w-full min-h-[700px] max-w-4xl mx-auto">
         <Calendar
           localizer={localizer}
           events={events as any}
           startAccessor="start"
           endAccessor="end"
-          style={{ width: '100%', height: '100%' }}
+          style={{ width: '100%', height: 'auto', minHeight: 400 }}
           culture="pt-BR"
           views={['month', 'week', 'day']}
           view={currentView}
@@ -819,7 +826,7 @@ const CofrinhoPage: React.FC = () => {
       </div>
 
 
-      <div className="p-6 bg-card rounded-xl shadow-md border border-border">
+      <div className="p-6 bg-card rounded-xl shadow-md border border-border min-h-[900px]">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
           <div className="text-sm">
             <div className="text-foreground"><span className="font-medium">tipo de aporte :</span> {formatFrequenciaLabel(selectedMeta?.frequencia as FrequenciaTabuleiro)}</div>
