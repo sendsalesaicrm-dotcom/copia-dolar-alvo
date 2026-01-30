@@ -289,6 +289,28 @@ const CofrinhoPage: React.FC = () => {
   const [metas, setMetas] = useState<MetaTabuleiro[]>([]);
   const [selectedMetaId, setSelectedMetaId] = useState<string | null>(null);
   const [grid, setGrid] = useState<GridValor[]>([]);
+  // Estado para controlar animação por célula (id: 'played' | 'playing' | undefined)
+  const [cellAnimation, setCellAnimation] = useState<{ [cellId: string]: 'played' | 'playing' | undefined }>({});
+
+  // Carregar do localStorage ao trocar de meta
+  useEffect(() => {
+    if (!selectedMetaId) return;
+    const key = `cofrinho_anim_${selectedMetaId}`;
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) setCellAnimation(JSON.parse(raw));
+      else setCellAnimation({});
+    } catch {
+      setCellAnimation({});
+    }
+  }, [selectedMetaId]);
+
+  // Salvar no localStorage ao mudar cellAnimation
+  useEffect(() => {
+    if (!selectedMetaId) return;
+    const key = `cofrinho_anim_${selectedMetaId}`;
+    localStorage.setItem(key, JSON.stringify(cellAnimation));
+  }, [cellAnimation, selectedMetaId]);
   const [loading, setLoading] = useState(true);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmCell, setConfirmCell] = useState<GridValor | null>(null);
@@ -298,6 +320,9 @@ const CofrinhoPage: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const confirmImageUrl = 'https://pmcupvcxgtjhswijbjbw.supabase.co/storage/v1/object/public/galeria/path1.svg';
+  // URL da animação para o calendário (após aporte confirmado)
+  const calendarVideoUrl = 'https://pmcupvcxgtjhswijbjbw.supabase.co/storage/v1/object/public/galeria/porquinho_final_calendario.webm';
+  // URL da animação para o modal de confirmação (mantém a anterior se necessário)
   const confirmVideoUrl = 'https://pmcupvcxgtjhswijbjbw.supabase.co/storage/v1/object/public/galeria/porquinho_final_limpo2%20(1).webm';
 
   const selectedMeta = useMemo(
@@ -502,11 +527,18 @@ const CofrinhoPage: React.FC = () => {
   const markAporte = async (cell: GridValor) => {
     if (cell.marcado) return;
     setGrid((prev) => prev.map((c) => (c.id === cell.id ? { ...c, marcado: true } : c)));
+    // Iniciar animação para a célula marcada
+    setCellAnimation((prev) => ({ ...prev, [cell.id]: 'playing' }));
     const { error } = await supabase.from('grid_valores').update({ marcado: true }).eq('id', cell.id);
     if (error) {
       console.error('Mark aporte error:', error);
       showError('Falha ao registrar o aporte.');
       setGrid((prev) => prev.map((c) => (c.id === cell.id ? { ...c, marcado: false } : c)));
+      setCellAnimation((prev) => {
+        const next = { ...prev };
+        delete next[cell.id];
+        return next;
+      });
     }
   };
 
@@ -658,11 +690,58 @@ const CofrinhoPage: React.FC = () => {
                   {grid.map((cell) => {
                     const marked = cell.marcado;
                     const tooltip = cell.data_prevista ? new Date(cell.data_prevista).toLocaleDateString('pt-BR') : undefined;
+                    const animState = cellAnimation[cell.id];
+                    // Se marcado e nunca exibiu animação, exibe SVG
+                    // Se marcado e animState === 'playing', exibe vídeo
+                    // Se marcado e animState === 'played', exibe SVG
+                    // Se não marcado, exibe valor
+                    let cellBg = 'bg-background border-border';
+                    if (marked && animState === 'playing') cellBg = 'bg-yellow-50 border-yellow-300';
+                    else if (marked && (animState === 'played' || animState === undefined)) cellBg = 'bg-green-100 border-green-400';
+                    else if (marked) cellBg = 'bg-green-100 border-green-400';
                     return (
-                      <button key={cell.id} onClick={() => { if (!marked) requestConfirm(cell); }} disabled={marked} title={tooltip} className={`relative aspect-square rounded-2xl border text-sm md:text-base flex items-center justify-center transition-colors overflow-hidden ${marked ? 'bg-green-500/10 border-green-500/30 text-foreground cursor-not-allowed opacity-90' : 'bg-background border-border hover:bg-muted/40 text-foreground'}`} aria-pressed={marked} aria-label={marked ? 'Aporte já registrado' : 'Marcar aporte'}>
-                        <span className={`text-center font-semibold ${marked ? 'opacity-70' : ''}`}>{formatAmount(Number(cell.valor))}</span>
-                        {marked ? (<span className="absolute top-2 right-2"><Check className="w-4 h-4 text-green-600" /></span>) : null}
-                      </button>
+                      <div key={cell.id} className={`relative aspect-square rounded-2xl border text-sm md:text-base flex items-center justify-center transition-colors overflow-hidden ${cellBg}`}>
+                        {!marked && (
+                          <button
+                            onClick={() => requestConfirm(cell)}
+                            disabled={marked}
+                            title={tooltip}
+                            className={`absolute inset-0 w-full h-full flex items-center justify-center bg-transparent text-foreground rounded-2xl`}
+                            aria-pressed={marked}
+                            aria-label={marked ? 'Aporte já registrado' : 'Marcar aporte'}
+                          >
+                            <span className="text-center font-semibold">{formatAmount(Number(cell.valor))}</span>
+                          </button>
+                        )}
+                        {marked && animState === 'playing' && (
+                          <video
+                            className="media-content w-20 h-20 sm:w-28 sm:h-28 object-contain"
+                            autoPlay
+                            muted
+                            playsInline
+                            preload="auto"
+                            onEnded={() => {
+                              setCellAnimation((prev) => ({ ...prev, [cell.id]: 'played' }));
+                            }}
+                            onError={() => {
+                              setCellAnimation((prev) => ({ ...prev, [cell.id]: 'played' }));
+                            }}
+                          >
+                            <source src={calendarVideoUrl} type="video/webm" />
+                            Seu navegador não suporta vídeos.
+                          </video>
+                        )}
+                        {marked && (animState === 'played' || animState === undefined) && (
+                          <img
+                            src={confirmImageUrl}
+                            alt="Porquinho"
+                            className="media-content w-14 h-14 sm:w-20 sm:h-20 object-contain"
+                          />
+                        )}
+                        {marked && (
+                          <span className="absolute top-2 right-2"><Check className="w-4 h-4 text-green-600" /></span>
+                        )}
+                      </div>
                     );
                   })}
                 </div>

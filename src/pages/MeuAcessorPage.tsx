@@ -192,93 +192,14 @@ const MeuAcessorPage: React.FC = () => {
       }
 
       // 3) If authenticated, merge Supabase conversations
-      if (user?.id) {
-        try {
-          const { data, error } = await supabase
-            .from('chat_registros')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('updated_at', { ascending: false });
-
-          if (!error && Array.isArray(data)) {
-            const mapRow = (row: any): Conversation => {
-              const id = row.id ?? crypto.randomUUID();
-              const title = row.title ?? row.titulo ?? 'Conversa';
-              const lastUpdated = Number(new Date(row.updated_at ?? row.last_updated ?? Date.now()).getTime());
-              const msgsRaw = row.messages ?? row.mensagens ?? [];
-              const messages: Msg[] = Array.isArray(msgsRaw)
-                ? msgsRaw.map((m: any) => ({
-                    id: m.id ?? crypto.randomUUID(),
-                    role: m.role === 'assistant' ? 'assistant' : 'user',
-                    text: String(m.text ?? m.conteudo ?? ''),
-                    time: Number(m.time ?? m.hora ?? Date.now()),
-                  }))
-                : [];
-              return { id, title, lastUpdated, messages };
-            };
-            const supaConvs = (data as any[]).map(mapRow).filter((c) => c.messages.length > 0);
-            if (supaConvs.length > 0) {
-              const mergedMap = new Map<string, Conversation>();
-              for (const c of localList) mergedMap.set(c.id, c);
-              for (const c of supaConvs) {
-                const existing = mergedMap.get(c.id);
-                if (!existing || c.lastUpdated >= existing.lastUpdated) {
-                  mergedMap.set(c.id, c);
-                }
-              }
-              const merged = Array.from(mergedMap.values()).sort((a, b) => b.lastUpdated - a.lastUpdated);
-              setConversations(merged);
-              setCurrentConversationId(merged[0]?.id ?? null);
-              setMessages(merged[0]?.messages || []);
-              saveConversations(merged);
-            }
-          }
-        } catch (e) {
-          console.warn('Falha ao consultar o Supabase; mantendo dados locais.', e);
-        }
-      }
+      // (Removido: leitura de chat_registros)
     };
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey, user?.id]);
 
   // Read-only refresh from Supabase
-  const refreshFromSupabase = async () => {
-    if (!user?.id) return;
-    try {
-      const { data, error } = await supabase
-        .from('chat_registros')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('updated_at', { ascending: false });
-
-      if (!error && Array.isArray(data)) {
-        const mapRow = (row: any): Conversation => {
-          const id = row.id ?? crypto.randomUUID();
-          const title = row.title ?? row.titulo ?? 'Conversa';
-          const lastUpdated = Number(new Date(row.updated_at ?? row.last_updated ?? Date.now()).getTime());
-          const msgsRaw = row.messages ?? row.mensagens ?? [];
-          const messages: Msg[] = Array.isArray(msgsRaw)
-            ? msgsRaw.map((m: any) => ({
-                id: m.id ?? crypto.randomUUID(),
-                role: m.role === 'assistant' ? 'assistant' : 'user',
-                text: String(m.text ?? m.conteudo ?? ''),
-                time: Number(m.time ?? m.hora ?? Date.now()),
-              }))
-            : [];
-          return { id, title, lastUpdated, messages };
-        };
-        const convsAll = (data as any[]).map(mapRow);
-        const convs = convsAll.filter((c) => Array.isArray(c.messages) && c.messages.length > 0);
-        setConversations(convs);
-        setCurrentConversationId(convs[0]?.id ?? null);
-        setMessages(convs[0]?.messages || []);
-        saveConversations(convs);
-      }
-    } catch (e) {
-      console.warn('Falha ao consultar o Supabase.', e);
-    }
-  };
+  // (Removido: refreshFromSupabase)
 
   const createNewConversation = () => {
     // Do not create a local empty conversation entry.
@@ -319,7 +240,6 @@ const MeuAcessorPage: React.FC = () => {
     // Excluir no Supabase (melhor-esforço)
     try {
       if (user?.id) {
-        supabase.from('chat_registros').delete().eq('id', id).eq('user_id', user.id);
         supabase.from('all_chat').delete().eq('id_chat', id).eq('user_id', user.id);
       }
     } catch {}
@@ -339,11 +259,6 @@ const MeuAcessorPage: React.FC = () => {
       // Atualizar no Supabase (melhor-esforço)
       try {
         if (user?.id) {
-          supabase
-            .from('chat_registros')
-            .update({ title: newTitle.trim(), updated_at: new Date().toISOString() })
-            .eq('id', id)
-            .eq('user_id', user.id);
           supabase
             .from('all_chat')
             .update({ name: newTitle.trim(), updated_at: new Date().toISOString() })
@@ -428,26 +343,19 @@ const MeuAcessorPage: React.FC = () => {
           const active = updated.find((c) => c.id === activeId);
           if (active && user?.id) {
             supabase
-              .from('chat_registros')
-              .upsert({
-                id: active.id,
-                user_id: user.id,
-                title: active.title,
-                messages: active.messages,
-                updated_at: new Date().toISOString(),
-              });
-            // Mirror into all_chat table
-            supabase
               .from('all_chat')
               .upsert({
                 id_chat: active.id,
                 user_id: user.id,
                 name: active.title,
-                content: active.messages,
+                content: JSON.parse(JSON.stringify(active.messages)),
                 updated_at: new Date().toISOString(),
-              });
+              })
+              .then(({ error }) => { if (error) console.error('Erro all_chat:', error); });
           }
-        } catch {}
+        } catch (e) {
+          console.error('Erro persistência:', e);
+        }
         return updated;
       });
     }
@@ -478,7 +386,8 @@ const MeuAcessorPage: React.FC = () => {
                 title: active.title,
                 messages: active.messages,
                 updated_at: new Date().toISOString(),
-              });
+              })
+              .then(({ error }) => { if (error) console.error('Erro chat_registros:', error); });
             // Mirror into all_chat table
             supabase
               .from('all_chat')
@@ -486,11 +395,14 @@ const MeuAcessorPage: React.FC = () => {
                 id_chat: active.id,
                 user_id: user.id,
                 name: active.title,
-                content: active.messages,
+                content: JSON.parse(JSON.stringify(active.messages)),
                 updated_at: new Date().toISOString(),
-              });
+              })
+              .then(({ error }) => { if (error) console.error('Erro all_chat:', error); });
           }
-        } catch {}
+        } catch (e) {
+          console.error('Erro persistência:', e);
+        }
         return updated;
       });
     }
