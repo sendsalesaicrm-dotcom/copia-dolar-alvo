@@ -1,0 +1,5 @@
+{
+  "name": "Dolar Alvo",
+  "description": "A financial planning web application to calculate the monthly contributions needed to achieve financial goals in dollars, using compound interest and providing detailed projections.",
+  "requestFramePermissions": []
+}

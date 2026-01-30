@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmação de Aporte</title>
+    <style>
+        /* Estilização Geral */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #5f0f0f;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* Container do Modal */
+        .modal {
+            background-color: #ffffff;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 30px;
+            width: 400px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        /* Botão de fechar (X) */
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            cursor: pointer;
+            color: #aaa;
+            font-size: 18px;
+        }
+
+        /* Textos */
+        h2 {
+            font-size: 20px;
+            color: #000000;
+            margin-bottom: 5px;
+        }
+        p.subtitle {
+            color: #837b7b;
+            margin-top: 0;
+            font-size: 16px;
+        }
+
+        /* ÁREA DA ANIMAÇÃO */
+        .animacao-wrapper {
+            height: 160px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+            overflow: hidden; 
+        }
+
+        /* Estilo comum para Imagem e Vídeo */
+        .media-content {
+            width: 150px;
+            height: 150px;
+            object-fit: contain;
+        }
+
+        /* Ajuste do SVG para ficar no tamanho proporcional ao porquinho do vídeo */
+        #img-estatica {
+            transform: scale(0.49); 
+        }
+
+        /* O Vídeo - Escondido por padrão */
+        #video-feedback {
+            display: none;
+            pointer-events: none; 
+        }
+
+        /* Botões */
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 40px;
+            border-radius: 25px;
+            border: none;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        .btn-sim {
+            background-color: #ff6600;
+            color: white;
+        }
+
+        .btn-nao {
+            background-color: #f0ede6;
+            color: #444;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+<div class="modal">
+    <div class="close-btn">✕</div>
+    
+    <h2>Você tem certeza que quer registrar esse aporte?</h2>
+    <p class="subtitle">Confirmar aporte desta data?</p>
+
+    <div class="animacao-wrapper">
+        <img id="img-estatica" 
+             src="https://pmcupvcxgtjhswijbjbw.supabase.co/storage/v1/object/public/galeria/path1.svg" 
+             alt="Porquinho" 
+             class="media-content">
+        
+        <video id="video-feedback" class="media-content" muted playsinline>
+            <source src="https://pmcupvcxgtjhswijbjbw.supabase.co/storage/v1/object/public/galeria/porquinho_final_limpo2.webm" type="video/webm">
+            Seu navegador não suporta vídeos.
+        </video>
+    </div>
+
+    <div class="button-group">
+        <button id="confirm-btn" class="btn-sim">Sim</button>
+        <button class="btn-nao">Não</button>
+    </div>
+</div>
+
+<script>
+    const btnSim = document.getElementById('confirm-btn');
+    const imgEstatica = document.getElementById('img-estatica');
+    const video = document.getElementById('video-feedback');
+
+    btnSim.addEventListener('click', () => {
+        // 1. Desabilita o botão para o usuário não clicar duas vezes durante a animação
+        btnSim.disabled = true;
+
+        // 2. Esconde a imagem e mostra o vídeo
+        imgEstatica.style.display = 'none';
+        video.style.display = 'block';
+
+        // 3. Inicia o vídeo
+        video.play().catch(error => {
+            console.error("Erro ao reproduzir o vídeo:", error);
+            voltarParaImagem();
+        });
+    });
+
+    // Função que faz a troca de volta para a imagem estática
+    function voltarParaImagem() {
+        video.style.display = 'none';
+        imgEstatica.style.display = 'block';
+        btnSim.disabled = false; // Reabilita o botão caso queira clicar de novo
+        video.currentTime = 0;   // Reseta o vídeo para o início
+    }
+
+    // EVENTO CHAVE: Quando a animação termina
+    video.onended = () => {
+        console.log("Animação terminou! Voltando para a imagem estática.");
+        
+        // Pequeno atraso opcional de 300ms para não ser um corte tão seco
+        setTimeout(() => {
+            voltarParaImagem();
+        }, 300);
+    };
+</script>
+
+</body>
+</html>
