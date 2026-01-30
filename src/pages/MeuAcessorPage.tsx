@@ -320,6 +320,7 @@ const MeuAcessorPage: React.FC = () => {
     try {
       if (user?.id) {
         supabase.from('chat_registros').delete().eq('id', id).eq('user_id', user.id);
+        supabase.from('all_chat').delete().eq('id_chat', id).eq('user_id', user.id);
       }
     } catch {}
   };
@@ -342,6 +343,11 @@ const MeuAcessorPage: React.FC = () => {
             .from('chat_registros')
             .update({ title: newTitle.trim(), updated_at: new Date().toISOString() })
             .eq('id', id)
+            .eq('user_id', user.id);
+          supabase
+            .from('all_chat')
+            .update({ name: newTitle.trim(), updated_at: new Date().toISOString() })
+            .eq('id_chat', id)
             .eq('user_id', user.id);
         }
       } catch {}
@@ -430,6 +436,16 @@ const MeuAcessorPage: React.FC = () => {
                 messages: active.messages,
                 updated_at: new Date().toISOString(),
               });
+            // Mirror into all_chat table
+            supabase
+              .from('all_chat')
+              .upsert({
+                id_chat: active.id,
+                user_id: user.id,
+                name: active.title,
+                content: active.messages,
+                updated_at: new Date().toISOString(),
+              });
           }
         } catch {}
         return updated;
@@ -461,6 +477,16 @@ const MeuAcessorPage: React.FC = () => {
                 user_id: user.id,
                 title: active.title,
                 messages: active.messages,
+                updated_at: new Date().toISOString(),
+              });
+            // Mirror into all_chat table
+            supabase
+              .from('all_chat')
+              .upsert({
+                id_chat: active.id,
+                user_id: user.id,
+                name: active.title,
+                content: active.messages,
                 updated_at: new Date().toISOString(),
               });
           }
