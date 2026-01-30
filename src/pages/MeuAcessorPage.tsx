@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Send, MoreVertical, Share2, Pencil, Pin, Archive, ChevronRight, Trash } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -34,6 +35,8 @@ const MeuAcessorPage: React.FC = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [menuOpenFor, setMenuOpenFor] = useState<string | null>(null);
+  const [menuCoords, setMenuCoords] = useState<{ top: number; left: number } | null>(null);
+  const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLButtonElement | null>(null);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [typingPhraseIndex, setTypingPhraseIndex] = useState(0);
@@ -134,7 +137,9 @@ const MeuAcessorPage: React.FC = () => {
       const raw = localStorage.getItem(storageKey);
       if (!raw) return [];
       const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
+      const list = Array.isArray(parsed) ? parsed : [];
+      // Filter out empty conversations (no messages)
+      return list.filter((c: Conversation) => Array.isArray(c.messages) && c.messages.length > 0);
     } catch {
       return [];
     }
@@ -174,26 +179,31 @@ const MeuAcessorPage: React.FC = () => {
               : [];
             return { id, title, lastUpdated, messages };
           };
-          const convs = (data as any[]).map(mapRow);
-          setConversations(convs);
-          setCurrentConversationId(convs[0].id);
-          setMessages(convs[0].messages || []);
-          saveConversations(convs);
+          const convsAll = (data as any[]).map(mapRow);
+          const convs = convsAll.filter((c) => Array.isArray(c.messages) && c.messages.length > 0);
+          if (convs.length === 0) {
+            setConversations([]);
+            setCurrentConversationId(null);
+            setMessages([]);
+            saveConversations([]);
+          } else {
+            setConversations(convs);
+            setCurrentConversationId(convs[0].id);
+            setMessages(convs[0].messages || []);
+            saveConversations(convs);
+          }
           return;
         }
       } catch (e) {
         console.warn('Falha ao carregar do Supabase, usando localStorage.', e);
       }
 
-      // Fallback to local storage
+      // Fallback to local storage (read-only, não cria conversa vazia automaticamente)
       const list = loadConversations();
       if (list.length === 0) {
-        const firstId = crypto.randomUUID();
-        const first: Conversation = { id: firstId, title: 'Conversa', lastUpdated: Date.now(), messages: [] };
-        setConversations([first]);
-        setCurrentConversationId(firstId);
+        setConversations([]);
+        setCurrentConversationId(null);
         setMessages([]);
-        saveConversations([first]);
       } else {
         const sorted = [...list].sort((a, b) => b.lastUpdated - a.lastUpdated);
         setConversations(sorted);
@@ -230,7 +240,8 @@ const MeuAcessorPage: React.FC = () => {
             : [];
           return { id, title, lastUpdated, messages };
         };
-        const convs = (data as any[]).map(mapRow);
+        const convsAll = (data as any[]).map(mapRow);
+        const convs = convsAll.filter((c) => Array.isArray(c.messages) && c.messages.length > 0);
         setConversations(convs);
         setCurrentConversationId(convs[0]?.id ?? null);
         setMessages(convs[0]?.messages || []);
@@ -242,26 +253,11 @@ const MeuAcessorPage: React.FC = () => {
   };
 
   const createNewConversation = () => {
-    const id = crypto.randomUUID();
-    const title = `Conversa ${conversations.length + 1}`;
-    const conv: Conversation = { id, title, lastUpdated: Date.now(), messages: [] };
-    const list = [conv, ...conversations];
-    setConversations(list);
-    setCurrentConversationId(id);
+    // Do not create a local empty conversation entry.
+    // Just clear current selection and prepare for first message.
+    setCurrentConversationId(null);
     setMessages([]);
-    saveConversations(list);
-    // Persistir no Supabase (melhor-esforço)
-    try {
-      supabase
-        .from('chat_registros')
-        .upsert({
-          id,
-          user_id: user?.id ?? null,
-          title,
-          messages: [],
-          updated_at: new Date().toISOString(),
-        });
-    } catch {}
+    // Persist nothing yet; materialize on first send.
   };
 
   const selectConversation = (id: string) => {
@@ -277,12 +273,11 @@ const MeuAcessorPage: React.FC = () => {
     setConversations((list) => {
       const filtered = list.filter((c) => c.id !== id);
       if (filtered.length === 0) {
-        const newId = crypto.randomUUID();
-        const conv: Conversation = { id: newId, title: 'Conversa', lastUpdated: Date.now(), messages: [] };
-        saveConversations([conv]);
-        setCurrentConversationId(newId);
+        // Do not auto-create an empty conversation; leave state empty.
+        saveConversations([]);
+        setCurrentConversationId(null);
         setMessages([]);
-        return [conv];
+        return [];
       }
       saveConversations(filtered);
       if (id === currentConversationId) {
@@ -323,23 +318,14 @@ const MeuAcessorPage: React.FC = () => {
     setMenuOpenFor(null);
   };
 
-  // Close the menu when clicking outside
+  // Close menu on ESC
   useEffect(() => {
-    const onDocClick = (e: MouseEvent) => {
-      if (!menuOpenFor) return;
-      const container = document.querySelector(`[data-menu-id="${menuOpenFor}"]`);
-      if (!container) {
-        setMenuOpenFor(null);
-        return;
-      }
-      const target = e.target as Node | null;
-      if (target && !container.contains(target)) {
-        setMenuOpenFor(null);
-      }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpenFor(null);
     };
-    document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
-  }, [menuOpenFor]);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const typingPhrases = useMemo(() => ['elaborando resposta', 'pensando', 'escrevendo','Refletindo'], []);
 
@@ -379,18 +365,29 @@ const MeuAcessorPage: React.FC = () => {
     const text = input.trim();
     if (!text || sending) return;
     setSending(true);
+    // Se não houver conversa ativa, cria uma agora (local), e só persiste no Supabase ao salvar a primeira mensagem
+    let activeId = currentConversationId;
+    if (!activeId) {
+      activeId = crypto.randomUUID();
+      const title = `Conversa ${conversations.length + 1}`;
+      const conv: Conversation = { id: activeId, title, lastUpdated: Date.now(), messages: [] };
+      const list = [conv, ...conversations];
+      setConversations(list);
+      setCurrentConversationId(activeId);
+      // Do not persist empty conversation yet; will persist after first message is added.
+    }
     const userMsg: Msg = { id: crypto.randomUUID(), role: 'user', text, time: now() };
     setMessages((m) => [...m, userMsg]);
     // Update current conversation with user message
-    if (currentConversationId) {
+    if (activeId) {
       setConversations((list) => {
         const updated = list.map((c) =>
-          c.id === currentConversationId ? { ...c, messages: [...(c.messages || []), userMsg], lastUpdated: Date.now() } : c
+          c.id === activeId ? { ...c, messages: [...(c.messages || []), userMsg], lastUpdated: Date.now() } : c
         );
         saveConversations(updated);
         // Persistir conversa ativa (melhor-esforço)
         try {
-          const active = updated.find((c) => c.id === currentConversationId);
+          const active = updated.find((c) => c.id === activeId);
           if (active) {
             supabase
               .from('chat_registros')
@@ -415,15 +412,15 @@ const MeuAcessorPage: React.FC = () => {
     const botMsg: Msg = { id: crypto.randomUUID(), role: 'assistant', text: replyText, time: now() };
     setMessages((m) => [...m, botMsg]);
     // Update current conversation with assistant message
-    if (currentConversationId) {
+    if (activeId) {
       setConversations((list) => {
         const updated = list.map((c) =>
-          c.id === currentConversationId ? { ...c, messages: [...(c.messages || []), botMsg], lastUpdated: Date.now() } : c
+          c.id === activeId ? { ...c, messages: [...(c.messages || []), botMsg], lastUpdated: Date.now() } : c
         );
         saveConversations(updated);
         // Persistir conversa ativa (melhor-esforço)
         try {
-          const active = updated.find((c) => c.id === currentConversationId);
+          const active = updated.find((c) => c.id === activeId);
           if (active) {
             supabase
               .from('chat_registros')
@@ -475,7 +472,7 @@ const MeuAcessorPage: React.FC = () => {
                 title="Atualizar do Supabase"
               >Atualizar</button>
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden">
               {conversations.length === 0 ? (
                 <div className="p-3 text-xs text-muted-foreground">Nenhuma conversa</div>
               ) : (
@@ -483,7 +480,6 @@ const MeuAcessorPage: React.FC = () => {
                   <div
                     key={c.id}
                     className={`relative flex items-center justify-between border-b border-border ${c.id === currentConversationId ? 'bg-sidebar-accent text-sidebar-accent-foreground font-semibold' : 'hover:bg-muted'}`}
-                    data-menu-id={c.id}
                   >
                     <button
                       className="flex-1 text-left px-3 py-2 text-sm"
@@ -492,20 +488,32 @@ const MeuAcessorPage: React.FC = () => {
                       <div className="truncate">{c.title}</div>
                       <div className="text-xs opacity-70">{formatTime(c.lastUpdated)}</div>
                     </button>
-                    <div className="relative">
-                      <button
-                        className="p-2 text-muted-foreground hover:text-foreground"
-                        onClick={(e) => { e.stopPropagation(); setMenuOpenFor(menuOpenFor === c.id ? null : c.id); }}
-                        aria-label="Mais opções"
-                        title="Opções"
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
-                      {menuOpenFor === c.id && (
-                        <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-card border border-border rounded-xl shadow-lg z-10 min-w-[220px] py-2">
+                    <button
+                      className="p-2 text-muted-foreground hover:text-foreground"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const btn = e.currentTarget as HTMLButtonElement;
+                        const rect = btn.getBoundingClientRect();
+                        setMenuOpenFor(menuOpenFor === c.id ? null : c.id);
+                        setMenuCoords({ top: rect.top + rect.height / 2, left: rect.right + 8 });
+                        setMenuAnchorEl(btn);
+                      }}
+                      aria-label="Mais opções"
+                      title="Opções"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+                    {menuOpenFor === c.id && menuCoords && createPortal(
+                      <>
+                        {/* backdrop to close on outside click */}
+                        <div className="fixed inset-0 z-40" onClick={() => setMenuOpenFor(null)} />
+                        <div
+                          className="fixed z-50 bg-card border border-border rounded-xl shadow-lg min-w-[220px] py-2"
+                          style={{ top: menuCoords.top, left: menuCoords.left, transform: 'translateY(-50%)' }}
+                        >
                           <button
                             className="flex items-center w-full text-left px-3 py-2 text-sm hover:bg-muted"
-                            onClick={(e) => { e.stopPropagation(); /* TODO: implement share */ setMenuOpenFor(null); }}
+                            onClick={(e) => { e.stopPropagation(); /* TODO: share */ setMenuOpenFor(null); }}
                           >
                             <Share2 className="w-4 h-4 mr-2" />
                             Compartilhar
@@ -517,12 +525,10 @@ const MeuAcessorPage: React.FC = () => {
                             <Pencil className="w-4 h-4 mr-2" />
                             Renomear
                           </button>
-                          <div className="px-3">
-                            <div className="border-t border-border my-2" />
-                          </div>
+                          <div className="px-3"><div className="border-t border-border my-2" /></div>
                           <button
                             className="flex items-center w-full text-left px-3 py-2 text-sm hover:bg-muted"
-                            onClick={(e) => { e.stopPropagation(); /* TODO: implement move to project submenu */ setMenuOpenFor(null); }}
+                            onClick={(e) => { e.stopPropagation(); /* TODO: move to project */ setMenuOpenFor(null); }}
                           >
                             <Archive className="w-4 h-4 mr-2" />
                             Mover para o projeto
@@ -530,21 +536,19 @@ const MeuAcessorPage: React.FC = () => {
                           </button>
                           <button
                             className="flex items-center w-full text-left px-3 py-2 text-sm hover:bg-muted"
-                            onClick={(e) => { e.stopPropagation(); /* TODO: implement pin chat */ setMenuOpenFor(null); }}
+                            onClick={(e) => { e.stopPropagation(); /* TODO: pin chat */ setMenuOpenFor(null); }}
                           >
                             <Pin className="w-4 h-4 mr-2" />
                             Fixar chat
                           </button>
                           <button
                             className="flex items-center w-full text-left px-3 py-2 text-sm hover:bg-muted"
-                            onClick={(e) => { e.stopPropagation(); /* TODO: implement archive chat */ setMenuOpenFor(null); }}
+                            onClick={(e) => { e.stopPropagation(); /* TODO: archive chat */ setMenuOpenFor(null); }}
                           >
                             <Archive className="w-4 h-4 mr-2" />
                             Arquivar
                           </button>
-                          <div className="px-3">
-                            <div className="border-t border-border my-2" />
-                          </div>
+                          <div className="px-3"><div className="border-t border-border my-2" /></div>
                           <button
                             className="flex items-center w-full text-left px-3 py-2 text-sm hover:bg-muted text-destructive"
                             onClick={(e) => { e.stopPropagation(); deleteConversation(c.id); }}
@@ -553,8 +557,9 @@ const MeuAcessorPage: React.FC = () => {
                             Excluir
                           </button>
                         </div>
-                      )}
-                    </div>
+                      </>,
+                      document.body
+                    )}
                   </div>
                 ))
               )}
