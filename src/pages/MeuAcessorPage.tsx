@@ -131,6 +131,7 @@ const MeuAcessorPage: React.FC = () => {
 
   // Storage helpers for conversation history
   const storageKey = useMemo(() => `meu_acessor_conversations_${user?.id || 'anon'}`, [user?.id]);
+  const anonStorageKey = 'meu_acessor_conversations_anon';
 
   const loadConversations = (): Conversation[] => {
     try {
@@ -153,75 +154,102 @@ const MeuAcessorPage: React.FC = () => {
     }
   };
 
+  const loadFromKey = (key: string): Conversation[] => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      const list = Array.isArray(parsed) ? parsed : [];
+      return list.filter((c: Conversation) => Array.isArray(c.messages) && c.messages.length > 0);
+    } catch {
+      return [];
+    }
+  };
+
   useEffect(() => {
     const init = async () => {
-      // Try Supabase first
-      try {
-        const { data, error } = await supabase
-          .from('chat_registros')
-          .select('*')
-          .eq('user_id', user?.id ?? null)
-          .order('updated_at', { ascending: false });
-
-        if (!error && Array.isArray(data) && data.length > 0) {
-          const mapRow = (row: any): Conversation => {
-            const id = row.id ?? crypto.randomUUID();
-            const title = row.title ?? row.titulo ?? 'Conversa';
-            const lastUpdated = Number(new Date(row.updated_at ?? row.last_updated ?? Date.now()).getTime());
-            const msgsRaw = row.messages ?? row.mensagens ?? [];
-            const messages: Msg[] = Array.isArray(msgsRaw)
-              ? msgsRaw.map((m: any) => ({
-                  id: m.id ?? crypto.randomUUID(),
-                  role: m.role === 'assistant' ? 'assistant' : 'user',
-                  text: String(m.text ?? m.conteudo ?? ''),
-                  time: Number(m.time ?? m.hora ?? Date.now()),
-                }))
-              : [];
-            return { id, title, lastUpdated, messages };
-          };
-          const convsAll = (data as any[]).map(mapRow);
-          const convs = convsAll.filter((c) => Array.isArray(c.messages) && c.messages.length > 0);
-          if (convs.length === 0) {
-            setConversations([]);
-            setCurrentConversationId(null);
-            setMessages([]);
-            saveConversations([]);
-          } else {
-            setConversations(convs);
-            setCurrentConversationId(convs[0].id);
-            setMessages(convs[0].messages || []);
-            saveConversations(convs);
-          }
-          return;
+      // 1) If user just logged in, migrate anon storage
+      if (user?.id) {
+        const userList = loadConversations();
+        const anonList = loadFromKey(anonStorageKey);
+        if (userList.length === 0 && anonList.length > 0) {
+          saveConversations(anonList);
+          try { localStorage.removeItem(anonStorageKey); } catch {}
         }
-      } catch (e) {
-        console.warn('Falha ao carregar do Supabase, usando localStorage.', e);
       }
 
-      // Fallback to local storage (read-only, não cria conversa vazia automaticamente)
-      const list = loadConversations();
-      if (list.length === 0) {
-        setConversations([]);
-        setCurrentConversationId(null);
-        setMessages([]);
-      } else {
-        const sorted = [...list].sort((a, b) => b.lastUpdated - a.lastUpdated);
+      // 2) Local-first: show conversations from current storage
+      const localList = loadConversations();
+      if (localList.length > 0) {
+        const sorted = [...localList].sort((a, b) => b.lastUpdated - a.lastUpdated);
         setConversations(sorted);
         setCurrentConversationId(sorted[0].id);
         setMessages(sorted[0].messages || []);
+      } else {
+        setConversations([]);
+        setCurrentConversationId(null);
+        setMessages([]);
+      }
+
+      // 3) If authenticated, merge Supabase conversations
+      if (user?.id) {
+        try {
+          const { data, error } = await supabase
+            .from('chat_registros')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('updated_at', { ascending: false });
+
+          if (!error && Array.isArray(data)) {
+            const mapRow = (row: any): Conversation => {
+              const id = row.id ?? crypto.randomUUID();
+              const title = row.title ?? row.titulo ?? 'Conversa';
+              const lastUpdated = Number(new Date(row.updated_at ?? row.last_updated ?? Date.now()).getTime());
+              const msgsRaw = row.messages ?? row.mensagens ?? [];
+              const messages: Msg[] = Array.isArray(msgsRaw)
+                ? msgsRaw.map((m: any) => ({
+                    id: m.id ?? crypto.randomUUID(),
+                    role: m.role === 'assistant' ? 'assistant' : 'user',
+                    text: String(m.text ?? m.conteudo ?? ''),
+                    time: Number(m.time ?? m.hora ?? Date.now()),
+                  }))
+                : [];
+              return { id, title, lastUpdated, messages };
+            };
+            const supaConvs = (data as any[]).map(mapRow).filter((c) => c.messages.length > 0);
+            if (supaConvs.length > 0) {
+              const mergedMap = new Map<string, Conversation>();
+              for (const c of localList) mergedMap.set(c.id, c);
+              for (const c of supaConvs) {
+                const existing = mergedMap.get(c.id);
+                if (!existing || c.lastUpdated >= existing.lastUpdated) {
+                  mergedMap.set(c.id, c);
+                }
+              }
+              const merged = Array.from(mergedMap.values()).sort((a, b) => b.lastUpdated - a.lastUpdated);
+              setConversations(merged);
+              setCurrentConversationId(merged[0]?.id ?? null);
+              setMessages(merged[0]?.messages || []);
+              saveConversations(merged);
+            }
+          }
+        } catch (e) {
+          console.warn('Falha ao consultar o Supabase; mantendo dados locais.', e);
+        }
       }
     };
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storageKey]);
+  }, [storageKey, user?.id]);
 
   // Read-only refresh from Supabase
   const refreshFromSupabase = async () => {
+    if (!user?.id) return;
     try {
       const { data, error } = await supabase
         .from('chat_registros')
         .select('*')
-        .eq('user_id', user?.id ?? null)
+        .eq('user_id', user.id)
         .order('updated_at', { ascending: false });
 
       if (!error && Array.isArray(data)) {
@@ -290,7 +318,9 @@ const MeuAcessorPage: React.FC = () => {
     setMenuOpenFor(null);
     // Excluir no Supabase (melhor-esforço)
     try {
-      supabase.from('chat_registros').delete().eq('id', id).eq('user_id', user?.id ?? null);
+      if (user?.id) {
+        supabase.from('chat_registros').delete().eq('id', id).eq('user_id', user.id);
+      }
     } catch {}
   };
 
@@ -307,11 +337,13 @@ const MeuAcessorPage: React.FC = () => {
       saveConversations(updated);
       // Atualizar no Supabase (melhor-esforço)
       try {
-        supabase
-          .from('chat_registros')
-          .update({ title: newTitle.trim(), updated_at: new Date().toISOString() })
-          .eq('id', id)
-          .eq('user_id', user?.id ?? null);
+        if (user?.id) {
+          supabase
+            .from('chat_registros')
+            .update({ title: newTitle.trim(), updated_at: new Date().toISOString() })
+            .eq('id', id)
+            .eq('user_id', user.id);
+        }
       } catch {}
       return updated;
     });
@@ -385,15 +417,15 @@ const MeuAcessorPage: React.FC = () => {
           c.id === activeId ? { ...c, messages: [...(c.messages || []), userMsg], lastUpdated: Date.now() } : c
         );
         saveConversations(updated);
-        // Persistir conversa ativa (melhor-esforço)
+        // Persistir conversa ativa (melhor-esforço) apenas se autenticado
         try {
           const active = updated.find((c) => c.id === activeId);
-          if (active) {
+          if (active && user?.id) {
             supabase
               .from('chat_registros')
               .upsert({
                 id: active.id,
-                user_id: user?.id ?? null,
+                user_id: user.id,
                 title: active.title,
                 messages: active.messages,
                 updated_at: new Date().toISOString(),
@@ -418,15 +450,15 @@ const MeuAcessorPage: React.FC = () => {
           c.id === activeId ? { ...c, messages: [...(c.messages || []), botMsg], lastUpdated: Date.now() } : c
         );
         saveConversations(updated);
-        // Persistir conversa ativa (melhor-esforço)
+        // Persistir conversa ativa (melhor-esforço) apenas se autenticado
         try {
           const active = updated.find((c) => c.id === activeId);
-          if (active) {
+          if (active && user?.id) {
             supabase
               .from('chat_registros')
               .upsert({
                 id: active.id,
-                user_id: user?.id ?? null,
+                user_id: user.id,
                 title: active.title,
                 messages: active.messages,
                 updated_at: new Date().toISOString(),
@@ -465,12 +497,6 @@ const MeuAcessorPage: React.FC = () => {
                 onClick={createNewConversation}
                 className="text-xs px-2 py-1 rounded-md bg-muted hover:bg-muted/80"
               >Novo</button>
-              <button
-                type="button"
-                onClick={refreshFromSupabase}
-                className="ml-2 text-xs px-2 py-1 rounded-md bg-muted hover:bg-muted/80"
-                title="Atualizar do Supabase"
-              >Atualizar</button>
             </div>
             <div className="flex-1 overflow-y-auto overflow-x-hidden">
               {conversations.length === 0 ? (
