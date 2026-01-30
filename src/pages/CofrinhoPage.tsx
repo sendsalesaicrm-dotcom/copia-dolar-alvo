@@ -275,6 +275,188 @@ const BigCalendarInline: React.FC<CalendarProps> = ({ startDate, endDate, entrie
   );
 };
 
+
+// Novo componente CalendarAporteBigCalendar
+const CalendarAporteBigCalendar: React.FC<{
+  grid: GridValor[];
+  cellAnimation: { [cellId: string]: 'modal' | 'modalVideo' | 'gridVideo' | 'selo' | undefined };
+  requestConfirm: (cell: GridValor) => void;
+  setCellAnimation: React.Dispatch<React.SetStateAction<{ [cellId: string]: 'modal' | 'modalVideo' | 'gridVideo' | 'selo' | undefined }>>;
+  confirmImageUrl: string;
+  calendarVideoUrl: string;
+}> = ({ grid, cellAnimation, requestConfirm, setCellAnimation, confirmImageUrl, calendarVideoUrl }) => {
+  // Estado para navegação de data e view
+  const [currentDate, setCurrentDate] = React.useState(new Date());
+  const [currentView, setCurrentView] = React.useState<'month' | 'week' | 'day'>('month');
+
+  // Monta os eventos para o Big Calendar
+  const events = React.useMemo(() => {
+    return grid.map(cell => {
+      if (!cell.data_prevista) return null;
+      const start = parseLocalDate(cell.data_prevista);
+      const end = new Date(start);
+      end.setHours(23, 59, 59, 999);
+      return {
+        id: cell.id,
+        title: formatAmount(Number(cell.valor)),
+        start,
+        end,
+        allDay: true,
+        marcado: cell.marcado,
+        animState: cellAnimation[cell.id],
+        cell,
+      };
+    }).filter(Boolean);
+  }, [grid, cellAnimation]);
+
+  // Customização do evento (quadradinho)
+  const EventCell: React.FC<{ event: any }> = ({ event }) => {
+    const { cell, marcado, animState } = event;
+    let cellBg = 'bg-background';
+    if (marcado && animState === 'gridVideo') cellBg = 'bg-green-50';
+    else if (marcado && animState === 'selo') cellBg = 'bg-green-100';
+    return (
+      <div className={`relative aspect-square rounded-2xl text-xs md:text-base flex items-center justify-center transition-colors overflow-hidden ${cellBg}`} style={{ minHeight: 48 }}>
+        {/* Removido o span da data */}
+        {!marcado && (
+          <button
+            onClick={() => requestConfirm(cell)}
+            disabled={marcado}
+            title={cell.data_prevista ? new Date(cell.data_prevista).toLocaleDateString('pt-BR') : undefined}
+            className={`absolute inset-0 w-full h-full flex items-center justify-center bg-transparent text-foreground rounded-2xl`}
+            aria-pressed={marcado}
+            aria-label={marcado ? 'Aporte já registrado' : 'Marcar aporte'}
+          >
+            <span className="text-center font-semibold">{formatAmount(Number(cell.valor))}</span>
+          </button>
+        )}
+        {marcado && animState === 'gridVideo' && (
+          <video
+            className="w-full h-full object-contain"
+            autoPlay
+            muted
+            playsInline
+            preload="auto"
+            onEnded={() => {
+              setCellAnimation((prev) => ({ ...prev, [cell.id]: 'selo' }));
+            }}
+            onError={() => {
+              setCellAnimation((prev) => ({ ...prev, [cell.id]: 'selo' }));
+            }}
+          >
+            <source src={calendarVideoUrl} type="video/webm" />
+          </video>
+        )}
+        {marcado && animState === 'selo' && (
+          <>
+            <img src={"https://pmcupvcxgtjhswijbjbw.supabase.co/storage/v1/object/public/galeria/calendario.svg"} className="w-16 h-16 object-contain animate-bounce" style={{ animationIterationCount: 1, animationDuration: '0.5s' }} />
+            <span className="absolute top-2 right-2 text-green-600 font-bold">✓</span>
+          </>
+        )}
+        {marcado && (!animState || animState === 'modal' || animState === 'modalVideo') && (
+          <img src={confirmImageUrl} alt="Porquinho" className="media-content w-14 h-14 sm:w-20 sm:h-20 object-contain" />
+        )}
+      </div>
+    );
+  };
+
+  // Customização do slot vazio (dia sem célula)
+  const DayPropGetter = (date: Date) => {
+    const cell = grid.find(c => c.data_prevista && parseLocalDate(c.data_prevista).toDateString() === date.toDateString());
+    if (!cell) {
+      return { className: 'bg-muted border-dashed border-border', style: { border: '1px dashed #e5e7eb', background: '#f3f4f6' } };
+    }
+    return {};
+  };
+
+  // Ao clicar no dia
+  const onSelectSlot = (slotInfo: any) => {
+    const date = slotInfo.start;
+    const cell = grid.find(c => c.data_prevista && parseLocalDate(c.data_prevista).toDateString() === date.toDateString());
+    if (cell) requestConfirm(cell);
+  };
+
+  // Manipuladores de navegação
+  const handleNavigate = (date: Date) => {
+    setCurrentDate(date);
+  };
+  const handleView = (view: any) => {
+    setCurrentView(view);
+  };
+
+  // Estilo para limitar altura e largura dos rbc-row-bg
+  React.useEffect(() => {
+    const styleId = 'calendar-row-bg-limit';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.innerHTML = `
+        .rbc-month-view .rbc-row-bg {
+          max-height: 130px;
+          max-width: 910px;
+          margin: 0 auto;
+        }
+        /* Remove espaços extras entre as semanas - remove qualquer linha vazia */
+        .rbc-month-view .rbc-row-bg:empty,
+        .rbc-month-view .rbc-row:empty {
+          display: none !important;
+          height: 0 !important;
+          min-height: 0 !important;
+          max-height: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        /* Remove padding/margin do container do mês */
+        .rbc-month-view {
+          padding-bottom: 0 !important;
+          margin-bottom: 0 !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    return () => {
+      const el = document.getElementById(styleId);
+      if (el) el.remove();
+    };
+  }, []);
+
+  return (
+    <div className="w-full flex justify-center items-center">
+      <div className="w-full aspect-square max-w-4xl mx-auto">
+        <Calendar
+          localizer={localizer}
+          events={events as any}
+          startAccessor="start"
+          endAccessor="end"
+          style={{ width: '100%', height: '100%' }}
+          culture="pt-BR"
+          views={['month', 'week', 'day']}
+          view={currentView}
+          date={currentDate}
+          onNavigate={handleNavigate}
+          onView={handleView}
+          components={{
+            event: EventCell,
+            toolbar: CalendarToolbar as any,
+          }}
+          selectable
+          onSelectSlot={onSelectSlot}
+          popup={false}
+          dayPropGetter={DayPropGetter}
+          messages={{
+            next: 'Próximo',
+            previous: 'Anterior',
+            today: 'Hoje',
+            month: 'Mês',
+            week: 'Semana',
+            day: 'Dia',
+          }}
+        />
+      </div>
+    </div>
+  );
+};
+
 const CofrinhoPage: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const { timezone } = useSettings();
@@ -289,8 +471,9 @@ const CofrinhoPage: React.FC = () => {
   const [metas, setMetas] = useState<MetaTabuleiro[]>([]);
   const [selectedMetaId, setSelectedMetaId] = useState<string | null>(null);
   const [grid, setGrid] = useState<GridValor[]>([]);
-  // Estado para controlar animação por célula (id: 'played' | 'playing' | undefined)
-  const [cellAnimation, setCellAnimation] = useState<{ [cellId: string]: 'played' | 'playing' | undefined }>({});
+  // Estado para controlar animação por célula (undefined | 'modal' | 'modalVideo' | 'gridVideo' | 'selo')
+  const [cellAnimation, setCellAnimation] = useState<{ [cellId: string]: 'modal' | 'modalVideo' | 'gridVideo' | 'selo' | undefined }>({});
+  const [selectedCellId, setSelectedCellId] = useState<string | null>(null);
 
   // Carregar do localStorage ao trocar de meta
   useEffect(() => {
@@ -528,7 +711,7 @@ const CofrinhoPage: React.FC = () => {
     if (cell.marcado) return;
     setGrid((prev) => prev.map((c) => (c.id === cell.id ? { ...c, marcado: true } : c)));
     // Iniciar animação para a célula marcada
-    setCellAnimation((prev) => ({ ...prev, [cell.id]: 'playing' }));
+    setCellAnimation((prev) => ({ ...prev, [cell.id]: 'gridVideo' }));
     const { error } = await supabase.from('grid_valores').update({ marcado: true }).eq('id', cell.id);
     if (error) {
       console.error('Mark aporte error:', error);
@@ -542,26 +725,16 @@ const CofrinhoPage: React.FC = () => {
     }
   };
 
+  // Ao clicar no quadrado, abre modal (imagem)
   const requestConfirm = (cell: GridValor) => {
     if (cell.marcado) { showSuccess('Aporte já registrado para esta data.'); return; }
     setConfirmCell(cell);
-    let message = 'Confirmar aporte desta data?';
-    try {
-      if (cell.data_prevista) {
-        const sel = parseLocalDate(cell.data_prevista);
-        const nowZ = utcToZonedTime(new Date(), timezone);
-        const today = new Date(nowZ.getFullYear(), nowZ.getMonth(), nowZ.getDate(), 0, 0, 0, 0);
-        const selDay = new Date(sel.getFullYear(), sel.getMonth(), sel.getDate(), 0, 0, 0, 0);
-        const diffDays = Math.round((selDay.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-        if (diffDays === 0) message = 'Confirmar aporte de hoje?';
-        else if (diffDays === 1) message = 'Deseja adiantar o pagamento do aporte de amanhã?';
-        else message = 'Confirmar aporte desta data?';
-      }
-    } catch {}
-    setConfirmText(message);
+    setSelectedCellId(cell.id);
+    setConfirmText('Confirmar aporte desta data?');
     setConfirmOpen(true);
     setConfirmShowVideo(false);
     setConfirmBtnDisabled(false);
+    setCellAnimation((prev) => ({ ...prev, [cell.id]: 'modal' }));
   };
 
   const handleConfirm = async () => {
@@ -573,15 +746,26 @@ const CofrinhoPage: React.FC = () => {
     setConfirmBtnDisabled(false);
   };
 
+  // Ao clicar "Sim" no modal, troca para vídeo no modal
   const startConfirmAnimation = async () => {
     setConfirmBtnDisabled(true);
     setConfirmShowVideo(true);
+    if (selectedCellId) {
+      setCellAnimation((prev) => ({ ...prev, [selectedCellId]: 'modalVideo' }));
+    }
   };
 
+  // Quando vídeo do modal termina, fecha modal e inicia vídeo no grid
   const onVideoEnded = async () => {
     setConfirmShowVideo(false);
     setConfirmBtnDisabled(false);
-    await handleConfirm();
+    setConfirmOpen(false);
+    if (selectedCellId) {
+      setCellAnimation((prev) => ({ ...prev, [selectedCellId]: 'gridVideo' }));
+      // Marca aporte no banco
+      const cell = grid.find((c) => c.id === selectedCellId);
+      if (cell) await markAporte(cell);
+    }
   };
 
   useEffect(() => {
@@ -597,14 +781,10 @@ const CofrinhoPage: React.FC = () => {
   }, [confirmShowVideo]);
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-4">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-foreground">Cofrinho de Aportes</h1>
-        <p className="mt-2 text-md text-muted-foreground">Marque valores pré-definidos até completar sua meta.</p>
-        <hr className="mt-4 border-t border-border" />
-      </div>
+    <div className="w-full px-0">
+      {/* Header removido conforme solicitado */}
 
-      <div className="mb-8 p-6 bg-card rounded-xl shadow-md border border-border">
+      <div className="mb-8 p-6 bg-card rounded-xl shadow-md border border-border w-full">
         <div className="flex items-center gap-2 mb-4">
           <Plus className="w-5 h-5 text-primary" />
           <h2 className="text-2xl font-semibold text-foreground">Criar Cofrinho</h2>
@@ -638,6 +818,7 @@ const CofrinhoPage: React.FC = () => {
         </form>
       </div>
 
+
       <div className="p-6 bg-card rounded-xl shadow-md border border-border">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
           <div className="text-sm">
@@ -664,100 +845,20 @@ const CofrinhoPage: React.FC = () => {
           </div>
         </div>
 
-        {!selectedMeta ? (
-          <div className="p-6 text-center text-muted-foreground border border-dashed border-border rounded-xl"><p>Crie um cofrinho para ver os quadradinhos.</p></div>
-        ) : (
-          <>
-            {progress && (
-              <div className="mb-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <div className="text-sm text-muted-foreground">Total Acumulado: <span className="text-foreground font-semibold">{formatCurrency(progress.totalMarcado)}</span><span className="text-muted-foreground"> / {formatCurrency(progress.objetivo)}</span></div>
-                  <div className="text-sm text-muted-foreground">Falta: <span className="text-foreground font-semibold">{formatCurrency(progress.restante)}</span></div>
-                </div>
-                <div className="mt-2">
-                  <div className="flex justify-between text-sm font-medium text-muted-foreground mb-1"><span>Progresso</span><span className="text-primary">{progress.pct.toFixed(1)}%</span></div>
-                  <div className="w-full bg-muted rounded-full h-2.5"><div className="h-2.5 rounded-full transition-all duration-500 bg-primary" style={{ width: `${progress.pct}%` }} /></div>
-                </div>
-              </div>
-            )}
-            {selectedMeta?.frequencia && selectedMeta.data_inicio && selectedMeta.data_fim ? (
-              <BigCalendarInline startDate={selectedMeta.data_inicio} endDate={selectedMeta.data_fim} entries={grid} frequencia={selectedMeta.frequencia as FrequenciaTabuleiro} onRequestConfirm={requestConfirm} />
-            ) : grid.length === 0 ? (
-              <div className="p-6 text-center text-muted-foreground border border-dashed border-border rounded-xl"><p>Nenhum quadradinho encontrado para este cofrinho.</p></div>
-            ) : (
-              <div className="mx-auto w-full">
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4 w-full max-w-3xl mx-auto">
-                  {grid.map((cell) => {
-                    const marked = cell.marcado;
-                    const tooltip = cell.data_prevista ? new Date(cell.data_prevista).toLocaleDateString('pt-BR') : undefined;
-                    const animState = cellAnimation[cell.id];
-                    // Se marcado e nunca exibiu animação, exibe SVG
-                    // Se marcado e animState === 'playing', exibe vídeo
-                    // Se marcado e animState === 'played', exibe SVG
-                    // Se não marcado, exibe valor
-                    let cellBg = 'bg-background border-border';
-                    if (marked && animState === 'playing') cellBg = 'bg-yellow-50 border-yellow-300';
-                    else if (marked && (animState === 'played' || animState === undefined)) cellBg = 'bg-green-100 border-green-400';
-                    else if (marked) cellBg = 'bg-green-100 border-green-400';
-                    return (
-                      <div key={cell.id} className={`relative aspect-square rounded-2xl border text-sm md:text-base flex items-center justify-center transition-colors overflow-hidden ${cellBg}`}>
-                        {!marked && (
-                          <button
-                            onClick={() => requestConfirm(cell)}
-                            disabled={marked}
-                            title={tooltip}
-                            className={`absolute inset-0 w-full h-full flex items-center justify-center bg-transparent text-foreground rounded-2xl`}
-                            aria-pressed={marked}
-                            aria-label={marked ? 'Aporte já registrado' : 'Marcar aporte'}
-                          >
-                            <span className="text-center font-semibold">{formatAmount(Number(cell.valor))}</span>
-                          </button>
-                        )}
-                        {marked && animState === 'playing' && (
-                          <video
-                            className="media-content w-20 h-20 sm:w-28 sm:h-28 object-contain"
-                            autoPlay
-                            muted
-                            playsInline
-                            preload="auto"
-                            onEnded={() => {
-                              setCellAnimation((prev) => ({ ...prev, [cell.id]: 'played' }));
-                            }}
-                            onError={() => {
-                              setCellAnimation((prev) => ({ ...prev, [cell.id]: 'played' }));
-                            }}
-                          >
-                            <source src={calendarVideoUrl} type="video/webm" />
-                            Seu navegador não suporta vídeos.
-                          </video>
-                        )}
-                        {marked && (animState === 'played' || animState === undefined) && (
-                          <img
-                            src={confirmImageUrl}
-                            alt="Porquinho"
-                            className="media-content w-14 h-14 sm:w-20 sm:h-20 object-contain"
-                          />
-                        )}
-                        {marked && (
-                          <span className="absolute top-2 right-2"><Check className="w-4 h-4 text-green-600" /></span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-            <div className="mt-6 flex items-center gap-4 text-xs text-muted-foreground">
-              <div className="flex items-center gap-2"><span className="inline-block w-4 h-4 rounded border border-border bg-background" /><span>Não marcado</span></div>
-              <div className="flex items-center gap-2"><span className="inline-block w-4 h-4 rounded border border-green-500/30 bg-green-500/15" /><span>Marcado</span></div>
-              <div className="flex items-center gap-2"><Check className="w-4 h-4" /><span>Sincroniza com Supabase</span></div>
-            </div>
-          </>
-        )}
+        {/* Grid de dias do mês atual, com animação e marcação */}
+
+        <CalendarAporteBigCalendar
+          grid={grid}
+          cellAnimation={cellAnimation}
+          requestConfirm={requestConfirm}
+          setCellAnimation={setCellAnimation}
+          confirmImageUrl={confirmImageUrl}
+          calendarVideoUrl={calendarVideoUrl}
+        />
+
       </div>
 
-      <footer className="text-center mt-8 text-muted-foreground text-sm"><p>&copy; {new Date().getFullYear()} Dolar Alvo. All rights reserved.</p></footer>
-
+      {/* Rodapé removido conforme solicitado */}
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -766,10 +867,11 @@ const CofrinhoPage: React.FC = () => {
           </DialogHeader>
           <div className="flex justify-center py-2">
             <div className="animacao-wrapper h-52 flex items-center justify-center overflow-hidden">
-              {!confirmShowVideo ? (
+              {!confirmShowVideo && (
                 <img src={confirmImageUrl} alt="Porquinho" className="media-content w-20 h-20 sm:w-30 sm:h-30 object-contain" />
-              ) : (
-                <video ref={videoRef} className="media-content w-48 h-48 sm:w-56 sm:h-56 object-contain" muted playsInline preload="auto" onLoadedData={() => { if (confirmShowVideo) { try { videoRef.current?.play(); } catch {} } }} onError={async () => { await handleConfirm(); }} onEnded={onVideoEnded}>
+              )}
+              {confirmShowVideo && (
+                <video ref={videoRef} className="media-content w-48 h-48 sm:w-56 sm:h-56 object-contain" muted playsInline preload="auto" onLoadedData={() => { if (confirmShowVideo) { try { videoRef.current?.play(); } catch {} } }} onError={async () => { await onVideoEnded(); }} onEnded={onVideoEnded}>
                   <source src={confirmVideoUrl} type="video/webm" />
                   Seu navegador não suporta vídeos.
                 </video>
