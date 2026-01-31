@@ -553,7 +553,7 @@ const CofrinhoPage: React.FC = () => {
         <form onSubmit={handleCreateMeta} className="space-y-4">
           <Input id="tabuleiro-nome" label="Nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex: Viagem, Reserva, iPhone" icon={<Target className="w-5 h-5 text-muted-foreground" />} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input id="tabuleiro-objetivo" label="Objetivo Total (R$)" value={objetivoTotal} onChange={(e) => setObjetivoTotal(e.target.value)} placeholder="10000" prefix={<span className="inline-flex items-center px-3 text-sm text-muted-foreground">R$</span>} type="number" helperText="O cofrinho terá 1 quadradinho por período (dia/semana/mês)." />
+            <Input id="tabuleiro-objetivo" label="Objetivo Total (R$)" value={objetivoTotal} onChange={(e) => setObjetivoTotal(e.target.value)} placeholder="10000" prefix={<span className="inline-flex items-center px-3 text-sm text-muted-foreground">R$</span>} type="number" />
             <div className="w-full">
               <label className="block text-sm font-medium text-foreground mb-1" htmlFor="tabuleiro-frequencia">Frequência</label>
               <div className="relative rounded-md shadow-sm">
