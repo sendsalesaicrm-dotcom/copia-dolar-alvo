@@ -63,6 +63,7 @@ const formatFrequenciaLabel = (f?: FrequenciaTabuleiro) => {
 // Novo componente CalendarAporteBigCalendar - versão customizada
 const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
+
 const CalendarAporteBigCalendar: React.FC<{
   grid: GridValor[];
   cellAnimation: { [cellId: string]: 'modal' | 'modalVideo' | 'gridVideo' | 'selo' | undefined };
@@ -71,8 +72,28 @@ const CalendarAporteBigCalendar: React.FC<{
   confirmImageUrl: string;
   calendarVideoUrl: string;
 }> = ({ grid, cellAnimation, requestConfirm, setCellAnimation, confirmImageUrl, calendarVideoUrl }) => {
-  // Estado para navegação de mês
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  // Descobrir todos os meses únicos com aporte
+  const monthsWithAporte = useMemo(() => {
+    const set = new Set<string>();
+    grid.forEach(cell => {
+      if (cell.data_prevista) {
+        const date = new Date(cell.data_prevista);
+        set.add(`${date.getFullYear()}-${date.getMonth()}`);
+      }
+    });
+    // Ordenar meses
+    return Array.from(set)
+      .map(str => {
+        const [year, month] = str.split('-').map(Number);
+        return new Date(year, month, 1);
+      })
+      .sort((a, b) => a.getTime() - b.getTime());
+  }, [grid]);
+
+  // Estado para navegação de mês (índice do array monthsWithAporte)
+  const [monthIdx, setMonthIdx] = useState(0);
+  useEffect(() => { setMonthIdx(0); }, [monthsWithAporte.length]);
+  const currentMonth = monthsWithAporte[monthIdx] || new Date();
 
   // Função para obter todos os dias do mês atual
   const monthStart = startOfMonth(currentMonth);
@@ -147,7 +168,7 @@ const CalendarAporteBigCalendar: React.FC<{
         )}
         {marcado && animState === 'selo' && (
           <>
-            <img src={"https://pmcupvcxgtjhswijbjbw.supabase.co/storage/v1/object/public/galeria/calendario.svg"} className="w-full h-auto max-h-full object-contain p-1 animate-bounce" style={{ animationIterationCount: 1, animationDuration: '0.5s', maxHeight: '100%', height: 'auto' }} />
+            <img src={"https://pmcupvcxgtjhswijbjbw.supabase.co/storage/v1/object/public/galeria/calendario.svg"} className="w-[80%] h-auto max-h-[80%] object-contain p-1 animate-bounce" style={{ animationIterationCount: 1, animationDuration: '0.5s', maxHeight: '90%', height: 'auto' }} />
             <span className="absolute top-2 right-2 text-green-600 font-bold">✓</span>
           </>
         )}
@@ -158,21 +179,21 @@ const CalendarAporteBigCalendar: React.FC<{
     );
   };
 
-  // Navegação de mês
-  const handlePrevMonth = () => setCurrentMonth((prev) => subMonths(prev, 1));
-  const handleNextMonth = () => setCurrentMonth((prev) => addMonths(prev, 1));
+  // Navegação de mês restrita aos meses com aporte
+  const handlePrevMonth = () => setMonthIdx((idx) => Math.max(0, idx - 1));
+  const handleNextMonth = () => setMonthIdx((idx) => Math.min(monthsWithAporte.length - 1, idx + 1));
 
   return (
     <div className="w-full flex flex-col items-center">
       <div className="flex items-center justify-center gap-4 mb-4">
-        <button onClick={handlePrevMonth} className="px-4 py-2 rounded bg-primary text-white disabled:opacity-50" aria-label="Anterior">
+        <button onClick={handlePrevMonth} disabled={monthIdx === 0} className="px-4 py-2 rounded bg-primary text-white disabled:opacity-50" aria-label="Anterior">
           <ChevronLeft className="h-4 w-4 mr-1" />
           Anterior
         </button>
         <span className="text-lg font-semibold capitalize min-w-[150px] text-center">
           {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
         </span>
-        <button onClick={handleNextMonth} className="px-4 py-2 rounded bg-primary text-white disabled:opacity-50" aria-label="Próximo">
+        <button onClick={handleNextMonth} disabled={monthIdx === monthsWithAporte.length - 1} className="px-4 py-2 rounded bg-primary text-white disabled:opacity-50" aria-label="Próximo">
           Próximo
           <ChevronRight className="h-4 w-4 ml-1" />
         </button>
@@ -533,8 +554,8 @@ const CofrinhoPage: React.FC = () => {
 
         <form onSubmit={handleCreateMeta} className="space-y-4">
           <Input id="tabuleiro-nome" label="Nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex: Viagem, Reserva, iPhone" icon={<Target className="w-5 h-5 text-muted-foreground" />} />
-          <Input id="tabuleiro-objetivo" label="Objetivo Total (R$)" value={objetivoTotal} onChange={(e) => setObjetivoTotal(e.target.value)} placeholder="10000" prefix={<span className="inline-flex items-center px-3 text-sm text-muted-foreground">R$</span>} type="number" helperText="O cofrinho terá 1 quadradinho por período (dia/semana/mês)." />
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input id="tabuleiro-objetivo" label="Objetivo Total (R$)" value={objetivoTotal} onChange={(e) => setObjetivoTotal(e.target.value)} placeholder="10000" prefix={<span className="inline-flex items-center px-3 text-sm text-muted-foreground">R$</span>} type="number" helperText="O cofrinho terá 1 quadradinho por período (dia/semana/mês)." />
             <div className="w-full">
               <label className="block text-sm font-medium text-foreground mb-1" htmlFor="tabuleiro-frequencia">Frequência</label>
               <div className="relative rounded-md shadow-sm">
@@ -546,10 +567,10 @@ const CofrinhoPage: React.FC = () => {
                 </select>
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input id="tabuleiro-data-inicio" label="Data de Início" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} placeholder="" icon={<Target className="w-5 h-5 text-muted-foreground" />} type="date" />
-              <Input id="tabuleiro-data-fim" label="Data de Fim" value={dataFim} onChange={(e) => setDataFim(e.target.value)} placeholder="" icon={<Target className="w-5 h-5 text-muted-foreground" />} type="date" />
-            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input id="tabuleiro-data-inicio" label="Data de Início" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} placeholder="" icon={<Target className="w-5 h-5 text-muted-foreground" />} type="date" />
+            <Input id="tabuleiro-data-fim" label="Data de Fim" value={dataFim} onChange={(e) => setDataFim(e.target.value)} placeholder="" icon={<Target className="w-5 h-5 text-muted-foreground" />} type="date" />
           </div>
 
           <button type="submit" disabled={creating} className="w-full py-3 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-opacity-75 transition-all duration-300 flex items-center justify-center gap-2 text-base">
