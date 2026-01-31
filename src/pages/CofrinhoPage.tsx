@@ -187,7 +187,6 @@ const CalendarAporteBigCalendar: React.FC<{
     <div className="w-full flex flex-col items-center">
       <div className="flex items-center justify-center gap-4 mb-4">
         <button onClick={handlePrevMonth} disabled={monthIdx === 0} className="px-4 py-2 rounded bg-primary text-white disabled:opacity-50" aria-label="Anterior">
-          <ChevronLeft className="h-4 w-4 mr-1" />
           Anterior
         </button>
         <span className="text-lg font-semibold capitalize min-w-[150px] text-center">
@@ -195,7 +194,6 @@ const CalendarAporteBigCalendar: React.FC<{
         </span>
         <button onClick={handleNextMonth} disabled={monthIdx === monthsWithAporte.length - 1} className="px-4 py-2 rounded bg-primary text-white disabled:opacity-50" aria-label="Próximo">
           Próximo
-          <ChevronRight className="h-4 w-4 ml-1" />
         </button>
       </div>
       <div className="w-full max-w-[900px]">
@@ -569,7 +567,20 @@ const CofrinhoPage: React.FC = () => {
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input id="tabuleiro-data-inicio" label="Data de Início" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} placeholder="" icon={<Target className="w-5 h-5 text-muted-foreground" />} type="date" />
+              <div>
+                <label htmlFor="tabuleiro-data-inicio" className="block text-sm font-medium text-foreground mb-1 flex items-center gap-2">
+                  <Target className="w-5 h-5 text-muted-foreground" />
+                  Data de Início
+                </label>
+                <input
+                  id="tabuleiro-data-inicio"
+                  type="date"
+                  value={dataInicio}
+                  onChange={e => setDataInicio(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="block w-full px-3 py-2 border rounded-lg bg-background text-foreground focus:outline-none sm:text-sm border-input focus:ring-ring focus:border-ring"
+                />
+              </div>
             <Input id="tabuleiro-data-fim" label="Data de Fim" value={dataFim} onChange={(e) => setDataFim(e.target.value)} placeholder="" icon={<Target className="w-5 h-5 text-muted-foreground" />} type="date" />
           </div>
 
