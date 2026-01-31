@@ -3,13 +3,13 @@ import { Check, Grid3X3, Plus, Target, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Input } from '../../components/Input';
-import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
-import format from 'date-fns/format';
-import parse from 'date-fns/parse';
-import startOfWeek from 'date-fns/startOfWeek';
-import getDay from 'date-fns/getDay';
-import ptBR from 'date-fns/locale/pt-BR';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, format, isSameDay } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+// Função utilitária para classes condicional (substitui cn)
+function cn(...classes: (string | undefined | null | false)[]) {
+  return classes.filter(Boolean).join(' ');
+}
 import { utcToZonedTime } from 'date-fns-tz';
 import { useSettings } from '../context/SettingsContext';
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription, DialogClose } from '../components/ui/dialog';
@@ -56,227 +56,13 @@ const formatFrequenciaLabel = (f?: FrequenciaTabuleiro) => {
   }
 };
 
-const locales = { 'pt-BR': ptBR } as const;
-const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek: (date) => startOfWeek(date, { weekStartsOn: 0 }),
-  getDay,
-  locales,
-});
-
-const parseLocalDate = (iso: string) => {
-  const base = iso.slice(0, 10);
-  const [y, m, d] = base.split('-').map(Number);
-  return new Date(y, (m || 1) - 1, d || 1, 12, 0, 0, 0);
-};
-
-const CalendarToolbar: React.FC<any> = (toolbar) => {
-  const goToBack = () => toolbar.onNavigate('PREV');
-  const goToNext = () => toolbar.onNavigate('NEXT');
-  return (
-    <div className="rbc-toolbar flex items-center justify-center gap-4 my-3">
-      <button
-        type="button"
-        className="px-3 py-1 rounded"
-        style={{ backgroundColor: '#E35C02', color: '#ffffff' }}
-        onClick={goToBack}
-      >
-        Anterior
-      </button>
-      <span className="text-foreground font-medium">{toolbar.label}</span>
-      <button
-        type="button"
-        className="px-3 py-1 rounded"
-        style={{ backgroundColor: '#E35C02', color: '#ffffff' }}
-        onClick={goToNext}
-      >
-        Próximo
-      </button>
-    </div>
-  );
-};
-
-type CalendarProps = {
-  startDate: string;
-  endDate: string;
-  entries: GridValor[];
-  frequencia: FrequenciaTabuleiro;
-  onRequestConfirm: (cell: GridValor) => void;
-};
-
-const BigCalendarInline: React.FC<CalendarProps> = ({ startDate, endDate, entries, frequencia, onRequestConfirm }) => {
-  const { timezone } = useSettings();
-  const startBoundary = useMemo(() => parseLocalDate(startDate), [startDate]);
-  const endBoundary = useMemo(() => parseLocalDate(endDate), [endDate]);
-  const [currentDate, setCurrentDate] = useState<Date>(startBoundary);
-  const [currentView, setCurrentView] = useState<'month' | 'week' | 'day' | 'agenda'>('month');
-
-  useEffect(() => {
-    setCurrentDate(startBoundary);
-  }, [startBoundary]);
-
-  const events = useMemo(() => {
-    return entries
-      .filter((e) => e.data_prevista)
-      .map((e) => {
-        const start = parseLocalDate(e.data_prevista!);
-        const end = new Date(start);
-        end.setHours(23, 59, 59, 999);
-        return {
-          id: e.id,
-          title: `${formatAmount(Number(e.valor))}`,
-          start,
-          end,
-          allDay: true,
-          extendedProps: e,
-        } as any;
-      });
-  }, [entries]);
-
-  const onSelectEvent = (event: any) => {
-    const ext = (event && event.extendedProps) as GridValor | undefined;
-    if (ext) {
-      onRequestConfirm(ext);
-      return;
-    }
-    const byId = entries.find((e) => e.id === event?.id);
-    if (byId) onRequestConfirm(byId);
-  };
-
-  const findEntryForDate = useCallback(
-    (date: Date): GridValor | undefined => {
-      const d = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
-      return entries.find((e) => {
-        if (!e.data_prevista) return false;
-        const ed = parseLocalDate(e.data_prevista);
-        const edDay = new Date(ed.getFullYear(), ed.getMonth(), ed.getDate(), 0, 0, 0, 0);
-        return edDay.getTime() === d.getTime();
-      });
-    },
-    [entries]
-  );
-
-  const onSelectSlot = ({ start }: { start: Date }) => {
-    const entry = findEntryForDate(start);
-    if (entry) onRequestConfirm(entry);
-  };
-
-  const EventItem: React.FC<{ event: any }> = ({ event }) => {
-    const cell = (event?.extendedProps ?? null) as GridValor | null;
-    const marcado = !!cell?.marcado;
-    return (
-      <div
-        className={
-          'flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold ' +
-          (marcado ? 'bg-blue-700 text-white' : 'bg-blue-100 text-blue-900')
-        }
-      >
-        {marcado && <Check className="w-3.5 h-3.5" />}
-        <span>{event.title}</span>
-      </div>
-    );
-  };
-
-  return (
-    <div className="no-time-grid">
-      <Calendar
-        localizer={localizer}
-        events={events}
-        date={currentDate}
-        view={currentView}
-        defaultView={currentView}
-        onView={(v) => setCurrentView(v as any)}
-        views={['month']}
-        startAccessor="start"
-        endAccessor="end"
-        style={{ height: 600 }}
-        culture="pt-BR"
-        components={{ toolbar: CalendarToolbar as any, event: EventItem as any }}
-        formats={{
-          weekdayFormat: (date, culture, l) => {
-            const full = l.format(date, 'EEEE', culture);
-            return full.replace('-feira', '');
-          },
-          dayFormat: (date, culture, l) => l.format(date, 'd', culture),
-          monthHeaderFormat: (date, culture, l) => l.format(date, 'MMMM yyyy', culture),
-          timeGutterFormat: () => '',
-          dateFormat: (date, culture, l) => {
-            const isOffMonth =
-              date.getMonth() !== currentDate.getMonth() ||
-              date.getFullYear() !== currentDate.getFullYear();
-            if (currentView === 'month' && isOffMonth) return '';
-            return l.format(date, 'dd', culture);
-          },
-        }}
-        step={1440}
-        timeslots={1}
-        messages={{
-          next: 'Próximo',
-          previous: 'Anterior',
-          today: 'Hoje',
-          month: 'Mês',
-          week: 'Semana',
-          day: 'Dia',
-          agenda: 'Agenda',
-        }}
-        eventPropGetter={(event: any) => {
-          if (currentView === 'month') {
-            const start = event.start as Date;
-            const isOffMonth =
-              start.getMonth() !== currentDate.getMonth() ||
-              start.getFullYear() !== currentDate.getFullYear();
-            if (isOffMonth) return { style: { display: 'none' } } as any;
-          }
-          const marcado = !!event?.extendedProps?.marcado;
-          if (marcado) {
-            return { style: { cursor: 'not-allowed', opacity: 0.9, pointerEvents: 'none' } } as any;
-          }
-          return {} as any;
-        }}
-        dayPropGetter={(date) => {
-          if (currentView === 'month') {
-            const isOffMonth =
-              date.getMonth() !== currentDate.getMonth() ||
-              date.getFullYear() !== currentDate.getFullYear();
-            if (isOffMonth) {
-              return { style: { backgroundColor: 'transparent' } };
-            }
-          }
-          const d = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
-          const startDay = new Date(
-            startBoundary.getFullYear(),
-            startBoundary.getMonth(),
-            startBoundary.getDate(),
-            0, 0, 0, 0
-          );
-          const endDay = new Date(
-            endBoundary.getFullYear(),
-            endBoundary.getMonth(),
-            endBoundary.getDate(),
-            23, 59, 59, 999
-          );
-
-          if (d < startDay || d > endDay) {
-            return { style: { backgroundColor: 'rgba(0,0,0,0.03)' } };
-          }
-          return {};
-        }}
-        getNow={() => {
-          const zoned = utcToZonedTime(new Date(), timezone);
-          return new Date(zoned.getFullYear(), zoned.getMonth(), zoned.getDate(), 12);
-        }}
-        onNavigate={(date) => setCurrentDate(date)}
-        onSelectEvent={onSelectEvent}
-        selectable
-        onSelectSlot={onSelectSlot as any}
-      />
-    </div>
-  );
-};
+// ...existing code...
 
 
-// Novo componente CalendarAporteBigCalendar
+
+// Novo componente CalendarAporteBigCalendar - versão customizada
+const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
 const CalendarAporteBigCalendar: React.FC<{
   grid: GridValor[];
   cellAnimation: { [cellId: string]: 'modal' | 'modalVideo' | 'gridVideo' | 'selo' | undefined };
@@ -285,47 +71,56 @@ const CalendarAporteBigCalendar: React.FC<{
   confirmImageUrl: string;
   calendarVideoUrl: string;
 }> = ({ grid, cellAnimation, requestConfirm, setCellAnimation, confirmImageUrl, calendarVideoUrl }) => {
-  // Estado para navegação de data e view
-  const [currentDate, setCurrentDate] = React.useState(new Date());
-  const [currentView, setCurrentView] = React.useState<'month' | 'week' | 'day'>('month');
+  // Estado para navegação de mês
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  // Monta os eventos para o Big Calendar
-  const events = React.useMemo(() => {
-    return grid.map(cell => {
-      if (!cell.data_prevista) return null;
-      const start = parseLocalDate(cell.data_prevista);
-      const end = new Date(start);
-      end.setHours(23, 59, 59, 999);
-      return {
-        id: cell.id,
-        title: formatAmount(Number(cell.valor)),
-        start,
-        end,
-        allDay: true,
-        marcado: cell.marcado,
-        animState: cellAnimation[cell.id],
-        cell,
-      };
-    }).filter(Boolean);
-  }, [grid, cellAnimation]);
+  // Função para obter todos os dias do mês atual
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(currentMonth);
+  const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+  const startDayOfWeek = getDay(monthStart); // 0 = domingo
+  const emptyCells = Array(startDayOfWeek).fill(null);
 
-  // Customização do evento (quadradinho)
-  const EventCell: React.FC<{ event: any }> = ({ event }) => {
-    const { cell, marcado, animState } = event;
+  // Função para encontrar célula do grid para uma data
+  const findCellForDate = (date: Date) => {
+    return grid.find((c) => c.data_prevista && isSameDay(new Date(c.data_prevista), date));
+  };
+
+  // Renderização da célula do calendário
+  const renderCell = (date: Date) => {
+    const cell = findCellForDate(date);
+    if (!cell) {
+      // Célula sem aporte
+      return (
+        <div className="h-[100px] flex items-center justify-center rounded-xl text-muted-foreground bg-muted border border-border">
+          {format(date, 'd', { locale: ptBR })}
+        </div>
+      );
+    }
+    const marcado = !!cell.marcado;
+    const animState = cellAnimation[cell.id];
     let cellBg = 'bg-background';
-    if (marcado && animState === 'gridVideo') cellBg = 'bg-green-50';
-    else if (marcado && animState === 'selo') cellBg = 'bg-green-100';
+    if (marcado && (animState === 'gridVideo' || animState === 'selo')) cellBg = 'bg-orange-custom';
+    // Classe utilitária para laranja customizado
+    const style = document.createElement('style');
+    style.innerHTML = `.bg-orange-custom { background-color: oklch(0.97 0.04 90.07); }`;
+    if (!document.getElementById('bg-orange-custom')) {
+      style.id = 'bg-orange-custom';
+      document.head.appendChild(style);
+    }
     return (
       <div
-        className={`relative aspect-square min-h-20 rounded-2xl text-xs md:text-base flex items-center justify-center transition-colors overflow-hidden ${cellBg}`}
+        className={cn('relative h-[100px] rounded-2xl text-xs md:text-base flex flex-col items-center justify-center transition-colors overflow-hidden', cellBg)}
       >
-        {/* Removido o span da data */}
+        <span className="absolute top-1 left-2 text-xs text-muted-foreground font-bold select-none pointer-events-none">
+          {format(date, 'd', { locale: ptBR })}
+        </span>
         {!marcado && (
           <button
             onClick={() => requestConfirm(cell)}
             disabled={marcado}
             title={cell.data_prevista ? new Date(cell.data_prevista).toLocaleDateString('pt-BR') : undefined}
-            className={`absolute inset-0 w-full h-full flex items-center justify-center bg-transparent text-foreground rounded-2xl`}
+            className="absolute inset-0 w-full h-full flex items-center justify-center bg-transparent text-foreground rounded-2xl"
             aria-pressed={marcado}
             aria-label={marcado ? 'Aporte já registrado' : 'Marcar aporte'}
           >
@@ -334,7 +129,8 @@ const CalendarAporteBigCalendar: React.FC<{
         )}
         {marcado && animState === 'gridVideo' && (
           <video
-            className="w-full h-full max-h-full object-contain p-1"
+            className="w-full h-auto max-h-full object-contain p-1"
+            style={{ maxHeight: '100%', height: 'auto' }}
             autoPlay
             muted
             playsInline
@@ -351,114 +147,52 @@ const CalendarAporteBigCalendar: React.FC<{
         )}
         {marcado && animState === 'selo' && (
           <>
-            <img src={"https://pmcupvcxgtjhswijbjbw.supabase.co/storage/v1/object/public/galeria/calendario.svg"} className="w-full h-full max-h-full object-contain p-1 animate-bounce" style={{ animationIterationCount: 1, animationDuration: '0.5s' }} />
+            <img src={"https://pmcupvcxgtjhswijbjbw.supabase.co/storage/v1/object/public/galeria/calendario.svg"} className="w-full h-auto max-h-full object-contain p-1 animate-bounce" style={{ animationIterationCount: 1, animationDuration: '0.5s', maxHeight: '100%', height: 'auto' }} />
             <span className="absolute top-2 right-2 text-green-600 font-bold">✓</span>
           </>
         )}
         {marcado && (!animState || animState === 'modal' || animState === 'modalVideo') && (
-          <img src={confirmImageUrl} alt="Porquinho" className="media-content w-full h-full max-h-full object-contain p-1" />
+          <img src={confirmImageUrl} alt="Porquinho" className="media-content w-full h-auto max-h-full object-contain p-1" style={{ maxHeight: '100%', height: 'auto' }} />
         )}
       </div>
     );
   };
 
-  // Customização do slot vazio (dia sem célula)
-  const DayPropGetter = (date: Date) => {
-    const cell = grid.find(c => c.data_prevista && parseLocalDate(c.data_prevista).toDateString() === date.toDateString());
-    if (!cell) {
-      return { className: 'bg-muted border-dashed border-border', style: { border: '1px dashed #e5e7eb', background: '#f3f4f6' } };
-    }
-    return {};
-  };
-
-  // Ao clicar no dia
-  const onSelectSlot = (slotInfo: any) => {
-    const date = slotInfo.start;
-    const cell = grid.find(c => c.data_prevista && parseLocalDate(c.data_prevista).toDateString() === date.toDateString());
-    if (cell) requestConfirm(cell);
-  };
-
-  // Manipuladores de navegação
-  const handleNavigate = (date: Date) => {
-    setCurrentDate(date);
-  };
-  const handleView = (view: any) => {
-    setCurrentView(view);
-  };
-
-  // Estilo responsivo para o calendário
-  React.useEffect(() => {
-    const styleId = 'calendar-responsive-style';
-    if (!document.getElementById(styleId)) {
-      const style = document.createElement('style');
-      style.id = styleId;
-      style.innerHTML = `
-        /* Garante que o calendário ocupe o espaço disponível sem overflow */
-        .rbc-month-view {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          min-height: 700px !important;
-          height: 700px !important;
-        }
-
-        /* Faz com que cada linha de semana tenha o mesmo peso proporcional */
-        .rbc-month-row {
-          flex: 1 0 0px;
-          min-height: 80px;
-        }
-
-        /* Ajusta o conteúdo para não vazar da célula */
-        .rbc-row-content {
-          height: 100%;
-        }
-
-        /* Remove bordas duplas e ajusta estética */
-        .rbc-off-range-bg {
-          background: rgba(0,0,0,0.02);
-        }
-      `;
-      document.head.appendChild(style);
-    }
-    return () => {
-      const el = document.getElementById(styleId);
-      if (el) el.remove();
-    };
-  }, []);
+  // Navegação de mês
+  const handlePrevMonth = () => setCurrentMonth((prev) => subMonths(prev, 1));
+  const handleNextMonth = () => setCurrentMonth((prev) => addMonths(prev, 1));
 
   return (
-    <div className="w-full flex justify-center items-center">
-      {/* Corrigido: altura automática para o calendário não sumir */}
-      <div className="w-full min-h-[700px] max-w-4xl mx-auto">
-        <Calendar
-          localizer={localizer}
-          events={events as any}
-          startAccessor="start"
-          endAccessor="end"
-          style={{ width: '100%', height: 'auto', minHeight: 400 }}
-          culture="pt-BR"
-          views={['month', 'week', 'day']}
-          view={currentView}
-          date={currentDate}
-          onNavigate={handleNavigate}
-          onView={handleView}
-          components={{
-            event: EventCell,
-            toolbar: CalendarToolbar as any,
-          }}
-          selectable
-          onSelectSlot={onSelectSlot}
-          popup={false}
-          dayPropGetter={DayPropGetter}
-          messages={{
-            next: 'Próximo',
-            previous: 'Anterior',
-            today: 'Hoje',
-            month: 'Mês',
-            week: 'Semana',
-            day: 'Dia',
-          }}
-        />
+    <div className="w-full flex flex-col items-center">
+      <div className="flex items-center justify-center gap-4 mb-4">
+        <button onClick={handlePrevMonth} className="px-4 py-2 rounded bg-primary text-white disabled:opacity-50" aria-label="Anterior">
+          <ChevronLeft className="h-4 w-4 mr-1" />
+          Anterior
+        </button>
+        <span className="text-lg font-semibold capitalize min-w-[150px] text-center">
+          {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
+        </span>
+        <button onClick={handleNextMonth} className="px-4 py-2 rounded bg-primary text-white disabled:opacity-50" aria-label="Próximo">
+          Próximo
+          <ChevronRight className="h-4 w-4 ml-1" />
+        </button>
+      </div>
+      <div className="w-full max-w-[900px]">
+        <div className="grid grid-cols-7 gap-4 mb-4">
+          {WEEKDAYS.map((day) => (
+            <div key={day} className="h-[80px] flex items-center justify-center text-xl font-medium text-muted-foreground">
+              {day}
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-4">
+          {emptyCells.map((_, idx) => (
+            <div key={`empty-${idx}`} className="h-[100px]" />
+          ))}
+          {daysInMonth.map((date) => (
+            <React.Fragment key={date.toISOString()}>{renderCell(date)}</React.Fragment>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -791,7 +525,7 @@ const CofrinhoPage: React.FC = () => {
     <div className="w-full px-0">
       {/* Header removido conforme solicitado */}
 
-      <div className="mb-8 p-6 bg-card rounded-xl shadow-md border border-border w-full">
+      <div className="mb-8 p-4 sm:p-6 bg-card rounded-xl shadow-md border border-border w-full max-w-2xl mx-auto">
         <div className="flex items-center gap-2 mb-4">
           <Plus className="w-5 h-5 text-primary" />
           <h2 className="text-2xl font-semibold text-foreground">Criar Cofrinho</h2>
@@ -826,43 +560,57 @@ const CofrinhoPage: React.FC = () => {
       </div>
 
 
-      <div className="p-6 bg-card rounded-xl shadow-md border border-border min-h-[900px]">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
-          <div className="text-sm">
-            <div className="text-foreground"><span className="font-medium">tipo de aporte :</span> {formatFrequenciaLabel(selectedMeta?.frequencia as FrequenciaTabuleiro)}</div>
-            <div className="text-foreground"><span className="font-medium">data de início:</span> {formatDate(selectedMeta?.data_inicio)}</div>
-            <div className="text-foreground"><span className="font-medium">data do término:</span> {formatDate(selectedMeta?.data_fim)}</div>
-            <p className="mt-2 text-muted-foreground">Clique nos quadradinhos para marcar.</p>
+      <div className="p-4 sm:p-6 bg-card rounded-xl shadow-md border border-border min-h-[600px] sm:min-h-[800px] md:min-h-[900px] w-full max-w-4xl mx-auto">
+        {metas.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full min-h-[600px]">
+            <video
+              src="https://pmcupvcxgtjhswijbjbw.supabase.co/storage/v1/object/public/galeria/cofre_vazio_reverse.webm"
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="w-full max-w-2xl h-[400px] sm:h-[500px] md:h-[600px] object-contain mb-4"
+              style={{ background: 'transparent' }}
+            />
+            <p className="text-lg text-muted-foreground mt-2">Nenhum cofrinho criado ainda.</p>
           </div>
-          <div className="flex items-end gap-2">
-            <label className="block text-xs text-muted-foreground mb-1">Selecionar Meta</label>
-            <select value={selectedMetaId ?? ''} onChange={(e) => setSelectedMetaId(e.target.value || null)} className="px-3 py-2 border rounded-lg bg-background text-foreground border-input">
-              {metas.length === 0 ? (
-                <option value="">Nenhuma meta</option>
-              ) : (
-                metas.map((m) => (
-                  <option key={m.id} value={m.id}>{m.nome ?? 'Meta'}</option>
-                ))
-              )}
-            </select>
-            <button type="button" onClick={handleDeleteMeta} disabled={!selectedMetaId} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed" style={{ backgroundColor: '#E35C02' }} aria-label="Excluir cofrinho" title="Excluir cofrinho">
-              <Trash2 className="w-4 h-4 text-white" />
-              <span className="hidden sm:inline">Excluir</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Grid de dias do mês atual, com animação e marcação */}
-
-        <CalendarAporteBigCalendar
-          grid={grid}
-          cellAnimation={cellAnimation}
-          requestConfirm={requestConfirm}
-          setCellAnimation={setCellAnimation}
-          confirmImageUrl={confirmImageUrl}
-          calendarVideoUrl={calendarVideoUrl}
-        />
-
+        ) : (
+          <>
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+              <div className="text-sm">
+                <div className="text-foreground"><span className="font-medium">tipo de aporte :</span> {formatFrequenciaLabel(selectedMeta?.frequencia as FrequenciaTabuleiro)}</div>
+                <div className="text-foreground"><span className="font-medium">data de início:</span> {formatDate(selectedMeta?.data_inicio)}</div>
+                <div className="text-foreground"><span className="font-medium">data do término:</span> {formatDate(selectedMeta?.data_fim)}</div>
+                <p className="mt-2 text-muted-foreground">Clique nos quadradinhos para marcar.</p>
+              </div>
+              <div className="flex items-end gap-2">
+                <label className="block text-xs text-muted-foreground mb-1">Selecionar Meta</label>
+                <select value={selectedMetaId ?? ''} onChange={(e) => setSelectedMetaId(e.target.value || null)} className="px-3 py-2 border rounded-lg bg-background text-foreground border-input">
+                  {metas.length === 0 ? (
+                    <option value="">Nenhuma meta</option>
+                  ) : (
+                    metas.map((m) => (
+                      <option key={m.id} value={m.id}>{m.nome ?? 'Meta'}</option>
+                    ))
+                  )}
+                </select>
+                <button type="button" onClick={handleDeleteMeta} disabled={!selectedMetaId} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed" style={{ backgroundColor: '#E35C02' }} aria-label="Excluir cofrinho" title="Excluir cofrinho">
+                  <Trash2 className="w-4 h-4 text-white" />
+                  <span className="hidden sm:inline">Excluir</span>
+                </button>
+              </div>
+            </div>
+            {/* Grid de dias do mês atual, com animação e marcação */}
+            <CalendarAporteBigCalendar
+              grid={grid}
+              cellAnimation={cellAnimation}
+              requestConfirm={requestConfirm}
+              setCellAnimation={setCellAnimation}
+              confirmImageUrl={confirmImageUrl}
+              calendarVideoUrl={calendarVideoUrl}
+            />
+          </>
+        )}
       </div>
 
       {/* Rodapé removido conforme solicitado */}
