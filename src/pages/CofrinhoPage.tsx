@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Check, Grid3X3, Plus, Target, Trash2 } from 'lucide-react';
+import { Check, Grid3X3, Plus, Target, Trash2, PiggyBank } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Input } from '../../components/Input';
@@ -557,8 +557,7 @@ const CofrinhoPage: React.FC = () => {
             <div className="w-full">
               <label className="block text-sm font-medium text-foreground mb-1" htmlFor="tabuleiro-frequencia">Frequência</label>
               <div className="relative rounded-md shadow-sm">
-                <div className="pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center"><Target className="w-5 h-5 text-muted-foreground" /></div>
-                <select id="tabuleiro-frequencia" value={frequencia} onChange={(e) => setFrequencia(e.target.value as FrequenciaTabuleiro)} className="block w-full pl-10 pr-4 py-2 border rounded-lg bg-background text-foreground focus:outline-none sm:text-sm border-input focus:ring-ring focus:border-ring">
+                <select id="tabuleiro-frequencia" value={frequencia} onChange={(e) => setFrequencia(e.target.value as FrequenciaTabuleiro)} className="block w-full pr-4 py-2 border rounded-lg bg-background text-foreground focus:outline-none sm:text-sm border-input focus:ring-ring focus:border-ring">
                   <option value="diaria">Diária</option>
                   <option value="semanal">Semanal</option>
                   <option value="mensal">Mensal</option>
@@ -568,8 +567,7 @@ const CofrinhoPage: React.FC = () => {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="tabuleiro-data-inicio" className="block text-sm font-medium text-foreground mb-1 flex items-center gap-2">
-                  <Target className="w-5 h-5 text-muted-foreground" />
+                <label htmlFor="tabuleiro-data-inicio" className="block text-sm font-medium text-foreground mb-1">
                   Data de Início
                 </label>
                 <input
@@ -585,7 +583,7 @@ const CofrinhoPage: React.FC = () => {
           </div>
 
           <button type="submit" disabled={creating} className="w-full py-3 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-opacity-75 transition-all duration-300 flex items-center justify-center gap-2 text-base">
-            {!creating && <Grid3X3 className="w-5 h-5 mr-1" />}
+            {!creating && <PiggyBank className="w-5 h-5 mr-1" />}
             {creating ? 'Gerando...' : 'Gerar Cofrinho'}
           </button>
         </form>
