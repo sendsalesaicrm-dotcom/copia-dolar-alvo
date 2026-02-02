@@ -2,7 +2,7 @@ import React from 'react';
 import { ProfileForm } from '../components/ProfileForm';
 import { PasswordForm } from '../components/PasswordForm';
 import { ThemeToggle } from '../components/ThemeToggle';
-import TimezoneSelect from '../components/TimezoneSelect';
+
 
 const SettingsPage: React.FC = () => {
   return (
@@ -14,7 +14,6 @@ const SettingsPage: React.FC = () => {
         </div>
         
         <div className="space-y-8">
-          <TimezoneSelect />
           <ProfileForm />
           <PasswordForm />
         </div>

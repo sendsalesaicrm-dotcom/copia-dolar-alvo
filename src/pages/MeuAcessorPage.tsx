@@ -183,8 +183,8 @@ const MeuAcessorPage: React.FC = () => {
       if (localList.length > 0) {
         const sorted = [...localList].sort((a, b) => b.lastUpdated - a.lastUpdated);
         setConversations(sorted);
-        setCurrentConversationId(sorted[0].id);
-        setMessages(sorted[0].messages || []);
+        setCurrentConversationId(null); // Não seleciona nenhuma conversa por padrão
+        setMessages([]); // Mostra tela de nova conversa
       } else {
         setConversations([]);
         setCurrentConversationId(null);
@@ -322,7 +322,11 @@ const MeuAcessorPage: React.FC = () => {
     let activeId = currentConversationId;
     if (!activeId) {
       activeId = crypto.randomUUID();
-      const title = `Conversa ${conversations.length + 1}`;
+      // Gera título dinâmico baseado no input do usuário
+      let title = input.trim();
+      if (title.length > 32) title = title.slice(0, 32) + '...';
+      // Se o input for vazio, usa fallback
+      if (!title) title = `Conversa ${conversations.length + 1}`;
       const conv: Conversation = { id: activeId, title, lastUpdated: Date.now(), messages: [] };
       const list = [conv, ...conversations];
       setConversations(list);
@@ -420,7 +424,6 @@ const MeuAcessorPage: React.FC = () => {
     <div className="w-full h-full">
       <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden flex flex-col h-full">
         <div className="px-4 py-3 border-b border-border text-sm text-muted-foreground flex items-center justify-between">
-          <span>Converse com seu acessor virtual sobre cofrinhos, metas e aportes.</span>
           {!webhookUrl && (
             <span className="ml-2 text-xs text-destructive">(Webhook não configurado: defina VITE_WEBWEBHOOK_URL_N8N no .env.local)</span>
           )}
@@ -532,20 +535,28 @@ const MeuAcessorPage: React.FC = () => {
           {/* Right: active chat */}
           <div className="flex-1 flex flex-col min-h-0">
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {messages.map((m) => (
-                <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap leading-relaxed ${m.role === 'user' ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-muted text-foreground rounded-bl-sm'}`}>
-                    {m.text}
-                    <div className="text-xs opacity-70 mt-1 text-right">{formatTime(m.time)}</div>
-                  </div>
+              {messages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full pt-16">
+                  <h2 className="text-2xl font-bold text-foreground mb-4 text-center">O que você quer aprender hoje?</h2>
                 </div>
-              ))}
-              {sending && (
-                <div className="flex justify-start">
-                  <div className="max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap leading-relaxed bg-muted text-foreground rounded-bl-sm italic animate-pulse">
-                    {typingPhrases[typingPhraseIndex]} {typingDots}
-                  </div>
-                </div>
+              ) : (
+                <>
+                  {messages.map((m) => (
+                    <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap leading-relaxed ${m.role === 'user' ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-muted text-foreground rounded-bl-sm'}`}>
+                        {m.text}
+                        <div className="text-xs opacity-70 mt-1 text-right">{formatTime(m.time)}</div>
+                      </div>
+                    </div>
+                  ))}
+                  {sending && (
+                    <div className="flex justify-start">
+                      <div className="max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap leading-relaxed bg-muted text-foreground rounded-bl-sm italic animate-pulse">
+                        {typingPhrases[typingPhraseIndex]} {typingDots}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
               <div ref={bottomRef} />
             </div>
