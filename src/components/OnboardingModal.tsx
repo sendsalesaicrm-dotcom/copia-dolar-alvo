@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Settings, Calculator, Goal, CheckCircle, X } from 'lucide-react';
+import { Loader2, Settings, Calculator, PiggyBank, CheckCircle, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { showSuccess, showError, showLoading, dismissToast } from '../utils/toast';
 import type { UserProfile } from '../../types';
@@ -9,7 +9,7 @@ import type { UserProfile } from '../../types';
 const ONBOARDING_STEPS = [
   { id: 1, path: '/settings', title: '1. Configurar Perfil', icon: Settings, description: 'Preencha seu nome e sobrenome nas configurações.' },
   { id: 2, path: '/suitability', title: '2. Teste de Investidor', icon: Calculator, description: 'Complete o teste de Suitability para definir seu perfil de risco.' },
-  { id: 3, path: '/goals', title: '3. Criar Primeira Meta', icon: Goal, description: 'Adicione sua primeira meta financeira para começar a planejar.' },
+  { id: 3, path: '/cofrinho', title: '3. Criar Primeiro Cofrinho', icon: PiggyBank, description: 'Crie seu primeiro cofrinho para começar a guardar.' },
 ];
 
 interface OnboardingModalProps {
@@ -23,14 +23,14 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ profile, refre
   const [isCompleting, setIsCompleting] = useState(false);
   const [isLoadingStatus, setIsLoadingStatus] = useState(true);
 
-  const checkGoalsCount = useCallback(async (userId: string) => {
+  const checkCofrinhosCount = useCallback(async (userId: string) => {
     const { count, error } = await supabase
-      .from('financial_goals')
+      .from('metas')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId);
 
     if (error) {
-      console.error('Error fetching goals count:', error);
+      console.error('Error fetching cofrinhos count:', error);
       return 0;
     }
     return count || 0;
@@ -91,11 +91,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ profile, refre
         return;
     }
 
-    // Step 3: Goals Check
-    const count = await checkGoalsCount(profile.id);
-    const goalsCompleted = count > 0;
+    // Step 3: Cofrinho Check
+    const count = await checkCofrinhosCount(profile.id);
+    const cofrinhoCompleted = count > 0;
 
-    if (goalsCompleted) {
+    if (cofrinhoCompleted) {
         step = 3;
     } else {
         setCurrentStepIndex(2);

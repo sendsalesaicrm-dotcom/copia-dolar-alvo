@@ -10,7 +10,7 @@ interface AppLayoutProps {
 }
 
 // Rotas que fazem parte do fluxo de Onboarding
-const ONBOARDING_ROUTES = ['/settings', '/suitability', '/goals'];
+const ONBOARDING_ROUTES = ['/settings', '/suitability', '/cofrinho'];
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     const { profile, isAuthenticated, loading, refreshProfile } = useAuth();
