@@ -108,7 +108,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ profile, refre
         await finalizeOnboarding();
     }
     setIsLoadingStatus(false);
-  }, [profile, checkGoalsCount, finalizeOnboarding]);
+  }, [profile, checkCofrinhosCount, finalizeOnboarding]);
 
   useEffect(() => {
     // Check status whenever the profile changes
