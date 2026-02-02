@@ -67,9 +67,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                             <li>
                                 <NavLink to="/planner" icon={<Calculator className="w-5 h-5" />}>Planejador</NavLink>
                             </li>
-                            <li>
+                            {/* <li>
                                 <NavLink to="/goals" icon={<Goal className="w-5 h-5" />}>Metas</NavLink>
-                            </li>
+                            </li> */}
                                                         {false && (
                                                             <li>
                                                                 <NavLink to="/caixinha" icon={<Wallet className="w-5 h-5" />}>Caixinha</NavLink>

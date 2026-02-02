@@ -2,12 +2,65 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../src/context/AuthContext';
 import { supabase } from '../src/lib/supabase';
 import { showError } from '../src/utils/toast';
-import { GoalProgressPieChart } from '../src/components/GoalProgressPieChart';
 import { CofrinhoProgressPieChart } from '../src/components/CofrinhoProgressPieChart';
-import { GoalSelector } from '../src/components/GoalSelector';
 import type { FinancialGoal, MetaTabuleiro, GridValor } from '../types';
 
+// import { DollarSign, TrendingUp, TrendingDown } from 'lucide-react'; 
+
+interface CurrencyQuote {
+  code: string;      // Ex: USD
+  codein: string;    // Ex: BRL
+  name: string;      // Ex: Dólar Americano/Real Brasileiro
+  bid: string;       // Compra
+  pctChange: string; // Variação %
+}
+
+const CurrencyCard = ({ label, quote }: { label: string, quote?: CurrencyQuote }) => {
+  if (!quote) {
+    return (
+      <div className="bg-card border border-border rounded-xl p-4 shadow-sm animate-pulse">
+        <div className="h-4 w-20 bg-muted rounded mb-2"></div>
+        <div className="h-8 w-32 bg-muted rounded"></div>
+      </div>
+    );
+  }
+  const isPositive = parseFloat(quote.pctChange) >= 0;
+  return (
+    <div className="bg-card border border-border rounded-xl p-4 shadow-sm flex flex-col justify-between">
+      <p className="text-sm text-muted-foreground font-medium">{label}</p>
+      <div className="mt-2">
+        <h3 className="text-2xl font-bold text-foreground">
+          R$ {parseFloat(quote.bid).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </h3>
+        <p className={`text-xs font-semibold mt-1 flex items-center ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+          {isPositive ? '▲' : '▼'} {quote.pctChange}%
+        </p>
+      </div>
+      <p className="text-[10px] text-muted-foreground mt-2 text-right">
+         Atualizado às {new Date().toLocaleTimeString()}
+      </p>
+    </div>
+  );
+};
+
 const DashboardPage: React.FC = () => {
+  // Estado para múltiplas moedas
+  const [cotacoes, setCotacoes] = useState<Record<string, CurrencyQuote> | null>(null);
+
+  useEffect(() => {
+    const fetchCotacoes = async () => {
+      try {
+        const response = await fetch('https://economia.awesomeapi.com.br/last/USD-BRL,EUR-BRL,BTC-BRL');
+        const data = await response.json();
+        setCotacoes(data);
+      } catch (err) {
+        console.error('Erro ao atualizar cotações:', err);
+      }
+    };
+    fetchCotacoes();
+    const intervalo = setInterval(fetchCotacoes, 30000);
+    return () => clearInterval(intervalo);
+  }, []);
   const { user, loading: authLoading } = useAuth();
   const [goals, setGoals] = useState<FinancialGoal[]>([]);
   const [loadingGoals, setLoadingGoals] = useState(true);
@@ -175,33 +228,27 @@ const DashboardPage: React.FC = () => {
   return (
     <div className="w-full max-w-4xl mx-auto">
       <div className="bg-card rounded-2xl shadow-lg p-6 sm:p-8">
+
         <h1 className="text-3xl font-bold text-foreground mb-4">Dashboard</h1>
         <p className="text-muted-foreground mb-8">Visão geral da sua evolução financeira.</p>
 
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold text-foreground">Progresso da Meta</h2>
-                <GoalSelector 
-                    goals={goals} 
-                    selectedGoalId={selectedGoalId} 
-                    onSelectGoal={setSelectedGoalId} 
-                />
-            </div>
-
-            <div className="p-4 border border-border rounded-xl">
-                {goals.length === 0 ? (
-                    <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                        <p>Nenhuma meta financeira cadastrada. Crie uma na seção "Metas".</p>
-                    </div>
-                ) : selectedGoal ? (
-                    <GoalProgressPieChart goal={selectedGoal} />
-                ) : (
-                    <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                        <p>Selecione uma meta para visualizar o progresso.</p>
-                    </div>
-                )}
-            </div>
+        {/* Grid de Cotações */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <CurrencyCard 
+            label="Dólar Comercial" 
+            quote={cotacoes?.USDBRL} 
+          />
+          <CurrencyCard 
+            label="Euro Comercial" 
+            quote={cotacoes?.EURBRL} 
+          />
+          <CurrencyCard 
+            label="Bitcoin" 
+            quote={cotacoes?.BTCBRL} 
+          />
         </div>
+
+
 
         {/* Cofrinho Progress */}
         <div className="mt-8 space-y-4">
@@ -234,6 +281,25 @@ const DashboardPage: React.FC = () => {
               </div>
             ) : (
               <>
+                {/* Info do tipo de aporte e período */}
+                <div className="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm text-muted-foreground">
+                  <div>
+                    <span className="font-semibold text-foreground">Tipo de aporte:</span> {(() => {
+                      switch(selectedCofrinho.frequencia) {
+                        case 'diaria': return 'Diário';
+                        case 'semanal': return 'Semanal';
+                        case 'mensal': return 'Mensal';
+                        default: return '-';
+                      }
+                    })()}
+                  </div>
+                  <div>
+                    <span className="font-semibold text-foreground">Início:</span> {selectedCofrinho.data_inicio ? new Date(selectedCofrinho.data_inicio).toLocaleDateString('pt-BR') : '-'}
+                  </div>
+                  <div>
+                    <span className="font-semibold text-foreground">Último aporte:</span> {selectedCofrinho.data_fim ? new Date(selectedCofrinho.data_fim).toLocaleDateString('pt-BR') : '-'}
+                  </div>
+                </div>
                 <CofrinhoProgressPieChart objetivo={cofrinhoProgress.objetivo} totalMarcado={cofrinhoProgress.totalMarcado} />
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-muted-foreground">
                   <div>

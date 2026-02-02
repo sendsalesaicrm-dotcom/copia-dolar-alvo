@@ -32,6 +32,12 @@ const suggestReply = (input: string): string => {
 
 const MeuAcessorPage: React.FC = () => {
   const [messages, setMessages] = useState<Msg[]>([]);
+  const [showHistory, setShowHistory] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 768; // md breakpoint do Tailwind
+    }
+    return true;
+  });
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [menuOpenFor, setMenuOpenFor] = useState<string | null>(null);
@@ -423,14 +429,10 @@ const MeuAcessorPage: React.FC = () => {
   return (
     <div className="w-full h-full">
       <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden flex flex-col h-full">
-        <div className="px-4 py-3 border-b border-border text-sm text-muted-foreground flex items-center justify-between">
-          {!webhookUrl && (
-            <span className="ml-2 text-xs text-destructive">(Webhook não configurado: defina VITE_WEBWEBHOOK_URL_N8N no .env.local)</span>
-          )}
-        </div>
+
         <div className="flex-1 flex min-h-0">
           {/* Left: conversation history */}
-          <div className="w-64 border-r border-border flex-shrink-0 flex flex-col">
+          <div className={`w-64 border-r border-border flex-shrink-0 flex flex-col bg-background transition-all duration-300 md:relative ${showHistory ? '' : 'hidden md:flex'}`}> 
             <div className="px-3 py-2 border-b border-border flex items-center justify-between">
               <span className="text-sm font-semibold">Histórico</span>
               <button
@@ -535,6 +537,16 @@ const MeuAcessorPage: React.FC = () => {
           {/* Right: active chat */}
           <div className="flex-1 flex flex-col min-h-0">
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {/* Botão para mobile para mostrar/ocultar histórico, fixo no topo do chat */}
+              <button
+                className="md:hidden w-full mb-4 px-3 py-1 rounded bg-muted text-xs font-semibold border border-border"
+                style={{ position: 'sticky', top: 0, zIndex: 10 }}
+                onClick={() => setShowHistory((v) => !v)}
+                type="button"
+                aria-label={showHistory ? 'Recolher histórico' : 'Mostrar histórico'}
+              >
+                {showHistory ? 'Ocultar histórico' : 'Mostrar histórico'}
+              </button>
               {messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full pt-16">
                   <h2 className="text-2xl font-bold text-foreground mb-4 text-center">O que você quer aprender hoje?</h2>
