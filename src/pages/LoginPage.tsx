@@ -50,6 +50,7 @@ const LoginPage: React.FC = () => {
           placeholder="••••••••"
           icon={<Lock className="w-5 h-5 text-muted-foreground" />}
           type="password"
+          showPasswordToggle
         />
         
         <div className="flex justify-end">
