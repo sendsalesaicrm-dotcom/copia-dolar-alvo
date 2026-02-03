@@ -24,11 +24,11 @@ export const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
             </button>
         </div>
 
-        {/* Centered page label for Meu Acessor */}
+        {/* Centered page label for Meu Assessor */}
         {showMeuAcessor && (
           <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 pointer-events-none select-none">
             <Bot className="w-5 h-5" style={{ color: '#E35C02' }} />
-            <span className="text-lg font-semibold text-foreground">Meu Acessor</span>
+            <span className="text-lg font-semibold text-foreground">Meu Assessor</span>
           </div>
         )}
 

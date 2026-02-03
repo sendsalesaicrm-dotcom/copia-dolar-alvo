@@ -78,10 +78,6 @@ const SuitabilityPage: React.FC = () => {
       </div>
       
       {/* Removed Blocker Modal logic as the blocked message is now inline */}
-
-      <footer className="text-center mt-8 text-muted-foreground text-sm">
-        <p>&copy; {new Date().getFullYear()} Dolar Alvo. All rights reserved.</p>
-      </footer>
     </div>
   );
 };

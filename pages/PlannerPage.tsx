@@ -13,13 +13,13 @@ const TermIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-
 const BRL_RATE = 4.50;
 
 const formatCurrency = (value: number, currency: 'USD' | 'BRL' = 'USD') => {
-    const options = {
+    const options: Intl.NumberFormatOptions = {
       style: 'currency',
       currency: currency,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     };
-    const locale = currency === 'USD' ? 'en-US' : 'pt-BR';
+    const locale: 'en-US' | 'pt-BR' = currency === 'USD' ? 'en-US' : 'pt-BR';
     return new Intl.NumberFormat(locale, options).format(value);
 };
 
@@ -216,10 +216,7 @@ const PlannerPage: React.FC = () => {
                 </div>
             )}
         </div>
-        <footer className="text-center mt-8 text-muted-foreground text-sm">
-            <p>&copy; {new Date().getFullYear()} Dolar Alvo. All rights reserved.</p>
-        </footer>
-    </div>
+      </div>
   );
 };
 

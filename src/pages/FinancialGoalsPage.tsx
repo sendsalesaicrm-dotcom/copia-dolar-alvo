@@ -163,10 +163,6 @@ const FinancialGoalsPage: React.FC = () => {
         </div>
       )}
 
-      <footer className="text-center mt-8 text-muted-foreground text-sm">
-        <p>&copy; {new Date().getFullYear()} Dolar Alvo. All rights reserved.</p>
-      </footer>
-
       {/* Modal de Edição */}
       <GoalEditModal
         goal={selectedGoal}

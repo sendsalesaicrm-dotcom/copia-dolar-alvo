@@ -55,7 +55,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                 <div className="h-full px-3 py-4 overflow-y-auto flex flex-col justify-between">
                     <div>
                         <div className="flex items-center justify-between mb-6">
-                            <span className="self-center text-xl font-semibold whitespace-nowrap text-sidebar-foreground">Dolar Alvo</span>
+                            <span className="self-center text-xl font-semibold whitespace-nowrap text-sidebar-foreground">Dólar Alvo</span>
                             <button onClick={() => setIsOpen(false)} className="md:hidden text-sidebar-foreground/70 hover:text-sidebar-foreground p-1 rounded-md">
                             <X className="w-6 h-6" />
                             </button>
@@ -79,7 +79,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                                 <NavLink to="/cofrinho" icon={<PiggyBank className="w-5 h-5" />}>Cofrinho</NavLink>
                             </li>
                             <li>
-                                <NavLink to="/meu-acessor" icon={<Bot className="w-5 h-5" />}>Meu Acessor</NavLink>
+                                <NavLink to="/meu-acessor" icon={<Bot className="w-5 h-5" />}>Meu Assessor</NavLink>
                             </li>
                             <li>
                             <NavLink to="/settings" icon={<Settings className="w-5 h-5" />}>Configurações</NavLink>

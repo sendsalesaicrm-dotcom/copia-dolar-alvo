@@ -314,9 +314,6 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
       </div>
-      <footer className="text-center mt-8 text-muted-foreground text-sm">
-        <p>&copy; {new Date().getFullYear()} Dolar Alvo. All rights reserved.</p>
-      </footer>
     </div>
   );
 };
