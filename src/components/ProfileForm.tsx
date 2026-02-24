@@ -8,16 +8,15 @@ import { AvatarUpload } from './AvatarUpload';
 
 export const ProfileForm: React.FC = () => {
   const { user, profile, refreshProfile } = useAuth();
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (profile) {
-      setFirstName(profile.first_name || '');
-      setLastName(profile.last_name || '');
+      const full = [profile.first_name, profile.last_name].filter(Boolean).join(' ');
+      setFullName(full || '');
       setEmail(profile.email || user?.email || '');
       setAvatarUrl(profile.avatar_url);
     }
@@ -31,12 +30,17 @@ export const ProfileForm: React.FC = () => {
     const toastId = showLoading('Atualizando perfil...');
 
     try {
-      // 1. Update profiles table (first_name and last_name)
+      // Divide o nome completo em primeiro nome e o restante como sobrenome
+      const parts = fullName.trim().split(/\s+/);
+      const first = parts[0] || '';
+      const last = parts.slice(1).join(' ') || '';
+
+      // 1. Update profiles table
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({ 
-            first_name: firstName.trim(),
-            last_name: lastName.trim(),
+        .update({
+          first_name: first,
+          last_name: last,
         })
         .eq('id', user.id);
 
@@ -70,34 +74,24 @@ export const ProfileForm: React.FC = () => {
   return (
     <div className="space-y-6 p-6 bg-card rounded-xl shadow-md border border-border">
       <h2 className="text-2xl font-semibold text-foreground">Informações Pessoais</h2>
-      
+
       {user && (
-        <AvatarUpload 
-          userId={user.id} 
-          avatarUrl={avatarUrl} 
-          onUploadSuccess={handleAvatarSuccess} 
+        <AvatarUpload
+          userId={user.id}
+          avatarUrl={avatarUrl}
+          onUploadSuccess={handleAvatarSuccess}
         />
       )}
 
       <form onSubmit={handleProfileUpdate} className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-            id="first-name"
-            label="Nome"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            placeholder="Seu nome"
-            icon={<User className="w-5 h-5 text-muted-foreground" />}
-            />
-            <Input
-            id="last-name"
-            label="Sobrenome"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            placeholder="Seu sobrenome"
-            icon={<User className="w-5 h-5 text-muted-foreground" />}
-            />
-        </div>
+        <Input
+          id="full-name"
+          label="Nome Completo"
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          placeholder="Seu nome completo"
+          icon={<User className="w-5 h-5 text-muted-foreground" />}
+        />
         <Input
           id="email"
           label="Email"
@@ -108,7 +102,7 @@ export const ProfileForm: React.FC = () => {
           type="email"
           helperText={email !== user?.email ? 'Uma verificação será enviada para o novo email.' : undefined}
         />
-        
+
         <button
           type="submit"
           disabled={loading}
