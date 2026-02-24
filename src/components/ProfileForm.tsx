@@ -15,7 +15,10 @@ export const ProfileForm: React.FC = () => {
 
   useEffect(() => {
     if (profile) {
-      const full = [profile.first_name, profile.last_name].filter(Boolean).join(' ');
+      const first = profile.first_name || '';
+      const last = profile.last_name || '';
+      // Se o primeiro e sobrenome forem idênticos, exibe apenas uma vez para evitar repetição (ex: Miguel Miguel)
+      const full = (first === last && first !== '') ? first : [first, last].filter(Boolean).join(' ');
       setFullName(full || '');
       setEmail(profile.email || user?.email || '');
       setAvatarUrl(profile.avatar_url);

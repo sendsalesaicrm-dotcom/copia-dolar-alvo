@@ -10,7 +10,7 @@ interface AuthContextType {
   loading: boolean;
   isAuthenticated: boolean;
   signOut: () => Promise<boolean>; // Retorna boolean
-  refreshProfile: () => Promise<void>;
+  refreshProfile: (userId?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,8 +40,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshProfile = useCallback(async (userId?: string) => { // Adiciona userId opcional
     const currentUserId = userId || user?.id; // Usa o userId fornecido ou o do estado
     if (currentUserId) {
-        const fetchedProfile = await fetchProfile(currentUserId);
-        setProfile(fetchedProfile);
+      const fetchedProfile = await fetchProfile(currentUserId);
+      setProfile(fetchedProfile);
     }
   }, [user, fetchProfile]);
 
@@ -50,7 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const resolveInitialSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        
+
         if (session?.user) {
           setUser(session.user);
           const fetchedProfile = await fetchProfile(session.user.id);
@@ -78,9 +78,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // We ignore INITIAL_SESSION here as it's handled by getSession() above.
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         if (session?.user) {
-            setUser(session.user);
-            // Refresh profile in background for these events
-            refreshProfile(session.user.id);
+          setUser(session.user);
+          // Refresh profile in background for these events
+          refreshProfile(session.user.id);
         }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
