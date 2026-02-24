@@ -650,8 +650,8 @@ const CofrinhoPage: React.FC = () => {
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-center text-white">Você tem certeza que quer registrar esse aporte?</DialogTitle>
-            <DialogDescription className="text-center text-white">{confirmText}</DialogDescription>
+            <DialogTitle className="text-center text-foreground">Você tem certeza que quer registrar esse aporte?</DialogTitle>
+            <DialogDescription className="text-center text-muted-foreground">{confirmText}</DialogDescription>
           </DialogHeader>
           <div className="flex justify-center py-2">
             <div className="animacao-wrapper h-52 flex items-center justify-center overflow-hidden">
