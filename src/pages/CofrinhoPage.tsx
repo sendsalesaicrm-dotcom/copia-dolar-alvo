@@ -12,6 +12,7 @@ function cn(...classes: (string | undefined | null | false)[]) {
 }
 import { utcToZonedTime } from 'date-fns-tz';
 import { useSettings } from '../context/SettingsContext';
+import { useTheme } from '../context/ThemeContext';
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription, DialogClose } from '../components/ui/dialog';
 import { dismissToast, showError, showLoading, showSuccess } from '../utils/toast';
 import type { GridValor, MetaTabuleiro } from '@/types';
@@ -113,7 +114,7 @@ const CalendarAporteBigCalendar: React.FC<{
     if (!cell) {
       // Célula sem aporte
       return (
-        <div className="h-[100px] flex items-center justify-center rounded-xl text-muted-foreground bg-muted border border-border">
+        <div className="h-14 sm:h-24 flex items-center justify-center rounded-xl text-muted-foreground bg-muted border border-border text-xs sm:text-base">
           {format(date, 'd', { locale: ptBR })}
         </div>
       );
@@ -122,18 +123,12 @@ const CalendarAporteBigCalendar: React.FC<{
     const animState = cellAnimation[cell.id];
     let cellBg = 'bg-background';
     if (marcado && (animState === 'gridVideo' || animState === 'selo')) cellBg = 'bg-orange-custom';
-    // Classe utilitária para laranja customizado
-    const style = document.createElement('style');
-    style.innerHTML = `.bg-orange-custom { background-color: oklch(0.97 0.04 90.07); }`;
-    if (!document.getElementById('bg-orange-custom')) {
-      style.id = 'bg-orange-custom';
-      document.head.appendChild(style);
-    }
+
     return (
       <div
-        className={cn('relative h-[100px] rounded-2xl text-xs md:text-base flex flex-col items-center justify-center transition-colors overflow-hidden', cellBg)}
+        className={cn('relative h-14 sm:h-24 rounded-2xl text-[10px] sm:text-base flex flex-col items-center justify-center transition-colors overflow-hidden', cellBg)}
       >
-        <span className="absolute top-1 left-2 text-xs text-muted-foreground font-bold select-none pointer-events-none">
+        <span className="absolute top-0.5 left-1 sm:top-1 sm:left-2 text-[9px] sm:text-xs text-muted-foreground font-bold select-none pointer-events-none">
           {format(date, 'd', { locale: ptBR })}
         </span>
         {!marcado && (
@@ -141,11 +136,11 @@ const CalendarAporteBigCalendar: React.FC<{
             onClick={() => requestConfirm(cell)}
             disabled={marcado}
             title={cell.data_prevista ? new Date(cell.data_prevista).toLocaleDateString('pt-BR') : undefined}
-            className="absolute inset-0 w-full h-full flex items-center justify-center bg-transparent text-foreground rounded-2xl"
+            className="absolute inset-0 w-full h-full flex items-center justify-center bg-transparent text-foreground rounded-2xl p-1"
             aria-pressed={marcado}
             aria-label={marcado ? 'Aporte já registrado' : 'Marcar aporte'}
           >
-            <span className="text-center font-semibold">{formatAmount(Number(cell.valor))}</span>
+            <span className="text-center font-bold text-[9px] sm:text-sm leading-tight">{formatAmount(Number(cell.valor))}</span>
           </button>
         )}
         {marcado && animState === 'gridVideo' && (
@@ -168,7 +163,7 @@ const CalendarAporteBigCalendar: React.FC<{
         )}
         {marcado && animState === 'selo' && (
           <>
-            <img src={"https://pmcupvcxgtjhswijbjbw.supabase.co/storage/v1/object/public/galeria/calendario.svg"} className="w-[80%] h-auto max-h-[80%] object-contain p-1 animate-bounce" style={{ animationIterationCount: 1, animationDuration: '0.5s', maxHeight: '90%', height: 'auto' }} />
+            <img src={confirmImageUrl} className="w-[80%] h-auto max-h-[80%] object-contain p-1 animate-bounce" style={{ animationIterationCount: 1, animationDuration: '0.5s', maxHeight: '90%', height: 'auto' }} />
             <span className="absolute top-2 right-2 text-green-600 font-bold">✓</span>
           </>
         )}
@@ -185,28 +180,28 @@ const CalendarAporteBigCalendar: React.FC<{
 
   return (
     <div className="w-full flex flex-col items-center">
-      <div className="flex items-center justify-center gap-4 mb-4">
-        <button onClick={handlePrevMonth} disabled={monthIdx === 0} className="px-4 py-2 rounded bg-primary text-white disabled:opacity-50" aria-label="Anterior">
+      <div className="flex items-center justify-between w-full max-w-[900px] mb-6 gap-2 sm:gap-4 px-2">
+        <button onClick={handlePrevMonth} disabled={monthIdx === 0} className="px-3 py-2 sm:px-4 sm:py-2 rounded-lg bg-primary text-white disabled:opacity-50 text-xs sm:text-sm font-bold shadow-sm" aria-label="Anterior">
           Anterior
         </button>
-        <span className="text-lg font-semibold capitalize min-w-[150px] text-center">
+        <span className="text-sm sm:text-xl font-black capitalize text-center text-foreground tracking-tight">
           {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
         </span>
-        <button onClick={handleNextMonth} disabled={monthIdx === monthsWithAporte.length - 1} className="px-4 py-2 rounded bg-primary text-white disabled:opacity-50" aria-label="Próximo">
+        <button onClick={handleNextMonth} disabled={monthIdx === monthsWithAporte.length - 1} className="px-3 py-2 sm:px-4 sm:py-2 rounded-lg bg-primary text-white disabled:opacity-50 text-xs sm:text-sm font-bold shadow-sm" aria-label="Próximo">
           Próximo
         </button>
       </div>
-      <div className="w-full max-w-[900px]">
-        <div className="grid grid-cols-7 gap-4 mb-4">
+      <div className="w-full max-w-[900px] px-1 sm:px-0">
+        <div className="grid grid-cols-7 gap-1 sm:gap-4 mb-2 sm:mb-4">
           {WEEKDAYS.map((day) => (
-            <div key={day} className="h-[80px] flex items-center justify-center text-xl font-medium text-muted-foreground">
+            <div key={day} className="h-8 sm:h-12 flex items-center justify-center text-[10px] sm:text-lg font-bold text-muted-foreground uppercase tracking-widest">
               {day}
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-7 gap-4">
+        <div className="grid grid-cols-7 gap-1 sm:gap-4">
           {emptyCells.map((_, idx) => (
-            <div key={`empty-${idx}`} className="h-[100px]" />
+            <div key={`empty-${idx}`} className="h-14 sm:h-24" />
           ))}
           {daysInMonth.map((date) => (
             <React.Fragment key={date.toISOString()}>{renderCell(date)}</React.Fragment>
@@ -220,6 +215,7 @@ const CalendarAporteBigCalendar: React.FC<{
 const CofrinhoPage: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const { timezone } = useSettings();
+  const { theme } = useTheme();
 
   const [nome, setNome] = useState('');
   const [objetivoTotal, setObjetivoTotal] = useState('10000');
@@ -262,11 +258,18 @@ const CofrinhoPage: React.FC = () => {
   const [confirmBtnDisabled, setConfirmBtnDisabled] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
-  const confirmImageUrl = 'https://pmcupvcxgtjhswijbjbw.supabase.co/storage/v1/object/public/galeria/path1.svg';
-  // URL da animação para o calendário (após aporte confirmado)
-  const calendarVideoUrl = 'https://pmcupvcxgtjhswijbjbw.supabase.co/storage/v1/object/public/galeria/porquinho_final_calendario.webm';
-  // URL da animação para o modal de confirmação (mantém a anterior se necessário)
-  const confirmVideoUrl = 'https://pmcupvcxgtjhswijbjbw.supabase.co/storage/v1/object/public/galeria/porquinho_final_limpo2%20(1).webm';
+  // URLs dinâmicas baseadas no tema
+  const confirmImageUrl = theme === 'dark'
+    ? 'https://blobgpedbfdjweiyxbzu.supabase.co/storage/v1/object/public/imagens/porquinho_branco.svg'
+    : 'https://blobgpedbfdjweiyxbzu.supabase.co/storage/v1/object/public/imagens/porquinho.svg';
+
+  const calendarVideoUrl = theme === 'dark'
+    ? 'https://blobgpedbfdjweiyxbzu.supabase.co/storage/v1/object/public/imagens/porquinho_branco_calendario.webm'
+    : 'https://blobgpedbfdjweiyxbzu.supabase.co/storage/v1/object/public/imagens/porquinho_final_calendario.webm';
+
+  const confirmVideoUrl = theme === 'dark'
+    ? 'https://blobgpedbfdjweiyxbzu.supabase.co/storage/v1/object/public/imagens/porquinho_branco.webm'
+    : 'https://blobgpedbfdjweiyxbzu.supabase.co/storage/v1/object/public/imagens/porquinho_final_limpo.webm';
 
   const selectedMeta = useMemo(
     () => metas.find((m) => m.id === selectedMetaId) ?? null,
@@ -553,7 +556,7 @@ const CofrinhoPage: React.FC = () => {
         <form onSubmit={handleCreateMeta} className="space-y-4">
           <Input id="tabuleiro-nome" label="Nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex: Viagem, Reserva, iPhone" icon={<Target className="w-5 h-5 text-muted-foreground" />} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input id="tabuleiro-objetivo" label="Objetivo Total (R$)" value={objetivoTotal} onChange={(e) => setObjetivoTotal(e.target.value)} placeholder="10000" prefix={<span className="inline-flex items-center px-3 text-sm text-muted-foreground">R$</span>} type="number" />
+            <Input id="tabuleiro-objetivo" label="Objetivo Total (R$)" value={objetivoTotal} onChange={(e) => setObjetivoTotal(e.target.value)} placeholder="10000" inputPrefix={<span className="inline-flex items-center px-3 text-sm text-muted-foreground">R$</span>} type="number" />
             <div className="w-full">
               <label className="block text-sm font-medium text-foreground mb-1" htmlFor="tabuleiro-frequencia">Frequência</label>
               <div className="relative rounded-md shadow-sm">
@@ -566,19 +569,19 @@ const CofrinhoPage: React.FC = () => {
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="tabuleiro-data-inicio" className="block text-sm font-medium text-foreground mb-1">
-                  Data de Início
-                </label>
-                <input
-                  id="tabuleiro-data-inicio"
-                  type="date"
-                  value={dataInicio}
-                  onChange={e => setDataInicio(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
-                  className="block w-full px-3 py-2 border rounded-lg bg-background text-foreground focus:outline-none sm:text-sm border-input focus:ring-ring focus:border-ring"
-                />
-              </div>
+            <div>
+              <label htmlFor="tabuleiro-data-inicio" className="block text-sm font-medium text-foreground mb-1">
+                Data de Início
+              </label>
+              <input
+                id="tabuleiro-data-inicio"
+                type="date"
+                value={dataInicio}
+                onChange={e => setDataInicio(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                className="block w-full px-3 py-2 border rounded-lg bg-background text-foreground focus:outline-none sm:text-sm border-input focus:ring-ring focus:border-ring"
+              />
+            </div>
             <Input id="tabuleiro-data-fim" label="Data de Fim" value={dataFim} onChange={(e) => setDataFim(e.target.value)} placeholder="" icon={<Target className="w-5 h-5 text-muted-foreground" />} type="date" />
           </div>
 
@@ -594,7 +597,7 @@ const CofrinhoPage: React.FC = () => {
         {metas.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full min-h-[600px]">
             <video
-              src="https://pmcupvcxgtjhswijbjbw.supabase.co/storage/v1/object/public/galeria/cofre_vazio_reverse.webm"
+              src="https://blobgpedbfdjweiyxbzu.supabase.co/storage/v1/object/public/imagens/cofre_vazio_reverse.webm"
               autoPlay
               loop
               muted
@@ -647,8 +650,8 @@ const CofrinhoPage: React.FC = () => {
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-center">Você tem certeza que quer registrar esse aporte?</DialogTitle>
-            <DialogDescription className="text-center">{confirmText}</DialogDescription>
+            <DialogTitle className="text-center text-white">Você tem certeza que quer registrar esse aporte?</DialogTitle>
+            <DialogDescription className="text-center text-white">{confirmText}</DialogDescription>
           </DialogHeader>
           <div className="flex justify-center py-2">
             <div className="animacao-wrapper h-52 flex items-center justify-center overflow-hidden">
@@ -656,7 +659,7 @@ const CofrinhoPage: React.FC = () => {
                 <img src={confirmImageUrl} alt="Porquinho" className="media-content w-20 h-20 sm:w-30 sm:h-30 object-contain" />
               )}
               {confirmShowVideo && (
-                <video ref={videoRef} className="media-content w-48 h-48 sm:w-56 sm:h-56 object-contain" muted playsInline preload="auto" onLoadedData={() => { if (confirmShowVideo) { try { videoRef.current?.play(); } catch {} } }} onError={async () => { await onVideoEnded(); }} onEnded={onVideoEnded}>
+                <video ref={videoRef} className="media-content w-48 h-48 sm:w-56 sm:h-56 object-contain" muted playsInline preload="auto" onLoadedData={() => { if (confirmShowVideo) { try { videoRef.current?.play(); } catch { } } }} onError={async () => { await onVideoEnded(); }} onEnded={onVideoEnded}>
                   <source src={confirmVideoUrl} type="video/webm" />
                   Seu navegador não suporta vídeos.
                 </video>

@@ -37,6 +37,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminO
     return <Navigate to="/" replace />;
   }
 
+  // Handle suspended account redirection
+  const isSuspended = !!profile?.deletion_scheduled_at;
+  if (isSuspended) {
+    return <Navigate to="/suspended" replace />;
+  }
+
   // Se autenticado (e admin, se adminOnly for true), permite o acesso.
   return <>{children}</>;
 };

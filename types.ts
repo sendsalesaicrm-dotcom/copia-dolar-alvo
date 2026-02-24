@@ -28,6 +28,7 @@ export interface UserProfile {
   last_suitability_at: string | null; // ISO date string
   // New field for Onboarding
   onboarding_completed: boolean;
+  deletion_scheduled_at: string | null;
 }
 
 export interface FinancialGoal {

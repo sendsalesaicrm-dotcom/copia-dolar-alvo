@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 
-interface InputProps {
+interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'prefix'> {
   id: string;
   label: string;
   value: string;
@@ -10,12 +10,12 @@ interface InputProps {
   error?: string;
   helperText?: string;
   icon?: React.ReactNode;
-  prefix?: React.ReactNode;
+  inputPrefix?: React.ReactNode;
   type?: string;
   showPasswordToggle?: boolean;
 }
 
-export const Input: React.FC<InputProps> = ({ id, label, value, onChange, placeholder, error, helperText, icon, prefix, type = 'text', showPasswordToggle = false }) => {
+export const Input: React.FC<InputProps> = ({ id, label, value, onChange, placeholder, error, helperText, icon, inputPrefix, type = 'text', showPasswordToggle = false, ...props }) => {
   const [showPassword, setShowPassword] = useState(false);
   const effectiveType = useMemo(() => {
     if (showPasswordToggle && type === 'password') {
@@ -29,9 +29,9 @@ export const Input: React.FC<InputProps> = ({ id, label, value, onChange, placeh
         {label}
       </label>
       <div className="relative rounded-md shadow-sm">
-        {prefix ? (
+        {inputPrefix ? (
           <div className="absolute inset-y-0 left-0 flex items-center">
-            {prefix}
+            {inputPrefix}
           </div>
         ) : (
           icon && (
@@ -41,16 +41,16 @@ export const Input: React.FC<InputProps> = ({ id, label, value, onChange, placeh
           )
         )}
         <input
+          {...props}
           type={effectiveType}
           id={id}
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          className={`block w-full ${prefix ? 'pl-14' : 'pl-10'} ${showPasswordToggle && type === 'password' ? 'pr-10' : 'pr-4'} py-2 border rounded-lg bg-background text-foreground focus:outline-none sm:text-sm ${
-            error
-              ? 'border-destructive focus:ring-destructive focus:border-destructive'
-              : 'border-input focus:ring-ring focus:border-ring'
-          }`}
+          className={`block w-full ${inputPrefix ? 'pl-14' : 'pl-10'} ${showPasswordToggle && type === 'password' ? 'pr-10' : 'pr-4'} py-2 border rounded-lg bg-background text-foreground focus:outline-none sm:text-sm ${error
+            ? 'border-destructive focus:ring-destructive focus:border-destructive'
+            : 'border-input focus:ring-ring focus:border-ring'
+            }`}
           step="any"
         />
         {showPasswordToggle && type === 'password' && (

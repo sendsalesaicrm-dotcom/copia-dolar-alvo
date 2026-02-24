@@ -71,8 +71,8 @@ export const CofrinhoProgressPieChart: React.FC<CofrinhoProgressPieChartProps> =
     <div className="relative h-[300px] w-full flex items-center justify-center">
       <Pie data={data} options={options} />
       <div className="absolute flex flex-col items-center justify-center">
-        <span className="text-4xl font-extrabold text-foreground">{pct.toFixed(1)}%</span>
-        <span className="text-sm text-muted-foreground mt-1">Progresso</span>
+        <span className="text-4xl font-extrabold text-card-foreground">{pct.toFixed(1)}%</span>
+        <span className="text-sm text-card-foreground/70 mt-1">Progresso</span>
       </div>
     </div>
   );

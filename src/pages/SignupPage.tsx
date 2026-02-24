@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, Loader2 } from 'lucide-react';
+import { Mail, Lock, Loader2, User } from 'lucide-react';
 import { Input } from '../../components/Input';
 import { AuthLayout } from '../components/AuthLayout';
 import { supabase } from '../lib/supabase';
@@ -8,6 +8,7 @@ import { showSuccess, showError, showLoading, dismissToast } from '../utils/toas
 
 const SignupPage: React.FC = () => {
   const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -17,7 +18,15 @@ const SignupPage: React.FC = () => {
     setLoading(true);
     const toastId = showLoading('Cadastrando...');
 
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: name,
+        },
+      },
+    });
 
     dismissToast(toastId);
     setLoading(false);
@@ -33,6 +42,16 @@ const SignupPage: React.FC = () => {
   return (
     <AuthLayout title="Crie sua conta" subtitle="Comece a planejar seu futuro financeiro hoje.">
       <form onSubmit={handleSubmit} className="space-y-4">
+        <Input
+          id="name"
+          label="Nome Completo"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Seu nome"
+          icon={<User className="w-5 h-5 text-muted-foreground" />}
+          type="text"
+          required
+        />
         <Input
           id="email"
           label="Email"
@@ -51,7 +70,7 @@ const SignupPage: React.FC = () => {
           icon={<Lock className="w-5 h-5 text-muted-foreground" />}
           type="password"
         />
-        
+
         <button
           type="submit"
           disabled={loading}

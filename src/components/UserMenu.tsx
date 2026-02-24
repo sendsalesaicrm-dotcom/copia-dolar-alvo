@@ -33,8 +33,8 @@ const UserMenu: React.FC = () => {
     setIsOpen(false);
     const success = await signOut();
     if (success) {
-        showSuccess('Você saiu da sua conta.');
-        navigate('/login');
+      showSuccess('Você saiu da sua conta.');
+      navigate('/login');
     }
   };
 
@@ -49,10 +49,10 @@ const UserMenu: React.FC = () => {
         {/* Avatar Display */}
         <div className="h-8 w-8 rounded-full overflow-hidden bg-muted flex items-center justify-center border border-border">
           {avatarUrl ? (
-            <img 
-              src={avatarUrl} 
-              alt="Avatar" 
-              className="w-full h-full object-cover" 
+            <img
+              src={avatarUrl}
+              alt="Avatar"
+              className="w-full h-full object-cover"
             />
           ) : (
             <User className="h-5 w-5 text-muted-foreground" />
@@ -64,15 +64,15 @@ const UserMenu: React.FC = () => {
       {isOpen && (
         <div className="absolute right-0 mt-2 w-64 origin-top-right bg-card border border-border rounded-lg shadow-xl z-50 p-2">
           <div className="px-3 py-2 border-b border-border mb-2">
-            <p className="text-sm font-medium text-foreground truncate">{displayName}</p>
-            <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+            <p className="text-sm font-medium text-card-foreground truncate">{displayName}</p>
+            <p className="text-xs text-card-foreground/70 truncate">{user?.email}</p>
           </div>
-          
+
           <div className="space-y-1">
             <Link
               to="/suitability"
               onClick={handleLinkClick}
-              className="flex items-center w-full px-3 py-2 text-sm text-foreground rounded-md hover:bg-muted transition-colors"
+              className="flex items-center w-full px-3 py-2 text-sm text-card-foreground rounded-md hover:bg-muted transition-colors"
             >
               <Calculator className="w-4 h-4 mr-2 text-primary" />
               Perfil de Investidor
@@ -80,27 +80,26 @@ const UserMenu: React.FC = () => {
             <Link
               to="/settings"
               onClick={handleLinkClick}
-              className="flex items-center w-full px-3 py-2 text-sm text-foreground rounded-md hover:bg-muted transition-colors"
+              className="flex items-center w-full px-3 py-2 text-sm text-card-foreground rounded-md hover:bg-muted transition-colors"
             >
-              <Settings className="w-4 h-4 mr-2 text-muted-foreground" />
+              <Settings className="w-4 h-4 mr-2 text-card-foreground/70" />
               Configurações
             </Link>
-            
-            {/* Theme Toggle Item */}
-            <div className="flex items-center justify-between w-full px-3 py-2 text-sm text-foreground rounded-md hover:bg-muted transition-colors">
-                <span>Alterar Tema</span>
-                <ThemeToggle />
+
+            <div className="flex items-center justify-between w-full px-3 py-2 text-sm text-card-foreground rounded-md hover:bg-muted transition-colors">
+              <span>Alterar Tema</span>
+              <ThemeToggle />
             </div>
           </div>
 
           {/* Logout Button */}
           <div className="pt-2 mt-2 border-t border-border">
             <button
-                onClick={handleLogout}
-                className="flex items-center w-full px-3 py-2 text-sm text-destructive rounded-md hover:bg-destructive/10 transition-colors"
+              onClick={handleLogout}
+              className="flex items-center w-full px-3 py-2 text-sm text-destructive rounded-md hover:bg-destructive/10 transition-colors"
             >
-                <LogOut className="w-4 h-4 mr-2" />
-                Sair
+              <LogOut className="w-4 h-4 mr-2" />
+              Sair
             </button>
           </div>
         </div>

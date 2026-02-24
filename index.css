@@ -55,6 +55,8 @@
   --shadow-lg: var(--shadow-lg);
   --shadow-xl: var(--shadow-xl);
   --shadow-2xl: var(--shadow-2xl);
+
+  --spacing-2: calc(var(--spacing) * 3);
 }
 
 /* ========= SCROLLBAR ========= */
@@ -89,45 +91,46 @@
   background: var(--foreground);
 }
 
-/* ========= PALETA LIGHT ========= */
+/* ========= PALETA LIGHT (CLEAN) ========= */
 :root {
-  --background: #faf9f5;
-  --foreground: #3d3929;
-  --card: #faf9f5;
-  --card-foreground: #141413;
+  --background: #ffffff;
+  --foreground: #201d17;
+  --card: #f6f6f6;
+  --card-foreground: #201d17;
   --popover: #ffffff;
-  --popover-foreground: #28261b;
+  --popover-foreground: #201d17;
 
   /* COR DE DESTAQUE PRINCIPAL */
-  --primary: #c96442;
-  --primary-foreground: #ffffff;
+  --primary: #ef6037;
+  --primary-foreground: #f6f6f6;
 
-  --secondary: #e9e6dc;
-  --secondary-foreground: #535146;
-  --muted: #ede9de;
-  --muted-foreground: #83827d;
-  --accent: #e9e6dc;
-  --accent-foreground: #28261b;
+  --secondary: #e5e5e5;
+  --secondary-foreground: #201d17;
+  --muted: #e5e5e5;
+  --muted-foreground: #5a5a5a;
+  --accent: #ef6037;
+  --accent-foreground: #f6f6f6;
   --destructive: #141413;
-  --destructive-foreground: #ffffff;
-  --border: #dad9d4;
-  --input: #b4b2a7;
-  --ring: #c96442;
+  --destructive-foreground: #f6f6f6;
+  --border: #e5e5e5;
+  --input: #e5e5e5;
+  --ring: #ef6037;
+  --orange-custom: oklch(0.97 0.04 90.07);
 
-  --chart-1: #b05730;
+  --chart-1: #ef6037;
   --chart-2: #9c87f5;
   --chart-3: #ded8c4;
   --chart-4: #dbd3f0;
   --chart-5: #b4552d;
 
-  --sidebar: #f5f4ee;
-  --sidebar-foreground: #3d3d3a;
-  --sidebar-primary: #c96442;
-  --sidebar-primary-foreground: #fbfbfb;
-  --sidebar-accent: #e9e6dc;
-  --sidebar-accent-foreground: #343434;
-  --sidebar-border: #ebebeb;
-  --sidebar-ring: #b5b5b5;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #201d17;
+  --sidebar-primary: #ef6037;
+  --sidebar-primary-foreground: #f6f6f6;
+  --sidebar-accent: #f6f6f6;
+  --sidebar-accent-foreground: #201d17;
+  --sidebar-border: #e5e5e5;
+  --sidebar-ring: #ef6037;
 
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
@@ -136,103 +139,66 @@
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
 
-  --radius: 0.5rem;
-
-  --shadow-x: 0;
-  --shadow-y: 1px;
-  --shadow-blur: 3px;
-  --shadow-spread: 0px;
-  --shadow-opacity: 0.1;
-  --shadow-color: oklch(0 0 0);
+  --radius: 0.75rem;
 
   --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
   --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-  --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.10),
-    0 1px 2px -1px hsl(0 0% 0% / 0.10);
-  --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.10),
-    0 1px 2px -1px hsl(0 0% 0% / 0.10);
-  --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.10),
-    0 2px 4px -1px hsl(0 0% 0% / 0.10);
-  --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.10),
-    0 4px 6px -1px hsl(0 0% 0% / 0.10);
-  --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.10),
-    0 8px 10px -1px hsl(0 0% 0% / 0.10);
+  --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.10);
+  --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.10);
+  --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.10);
+  --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.10);
+  --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.10);
   --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
-
-  --tracking-normal: 0em;
-  --spacing: 0.25rem;
 }
 
-/* ========= PALETA DARK ========= */
+/* ========= PALETA DARK (RESTAURADA) ========= */
 .dark {
-  --background: #262624;
-  --foreground: #c3c0b6;
-  --card: #262624;
-  --card-foreground: #faf9f5;
-  --popover: #30302e;
-  --popover-foreground: #e5e5e2;
-  --primary: #d97757;
-  --primary-foreground: #ffffff;
-  --secondary: #faf9f5;
-  --secondary-foreground: #30302e;
-  --muted: #1b1b19;
-  --muted-foreground: #b7b5a9;
-  --accent: #1a1915;
-  --accent-foreground: #f5f4ee;
+  --background: #201d17;
+  --foreground: #f6f6f6;
+  --card: #2a2721;
+  --card-foreground: #f6f6f6;
+  --popover: #2a2721;
+  --popover-foreground: #f6f6f6;
+  --primary: #ef6037;
+  --primary-foreground: #f6f6f6;
+  --secondary: #1a1814;
+  --secondary-foreground: #f6f6f6;
+  --muted: #151310;
+  --muted-foreground: #8a8a83;
+  --accent: #ef6037;
+  --accent-foreground: #f6f6f6;
   --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --border: #3e3e38;
-  --input: #52514a;
-  --ring: #d97757;
+  --destructive-foreground: #f6f6f6;
+  --border: #33312c;
+  --input: #33312c;
+  --ring: #ef6037;
+  --orange-custom: oklch(0.23 0.01 84.51);
 
-  --chart-1: #b05730;
+  --chart-1: #ef6037;
   --chart-2: #9c87f5;
   --chart-3: #1a1915;
   --chart-4: #2f2b48;
   --chart-5: #b4552d;
 
-  --sidebar: #1f1e1d;
-  --sidebar-foreground: #c3c0b6;
-  --sidebar-primary: #343434;
-  --sidebar-primary-foreground: #fbfbfb;
-  --sidebar-accent: #0f0f0e;
-  --sidebar-accent-foreground: #c3c0b6;
-  --sidebar-border: #ebebeb;
-  --sidebar-ring: #b5b5b5;
-
-  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", "Courier New", monospace;
-
-  --radius: 0.5rem;
-
-  --shadow-x: 0;
-  --shadow-y: 1px;
-  --shadow-blur: 3px;
-  --shadow-spread: 0px;
-  --shadow-opacity: 0.1;
-  --shadow-color: oklch(0 0 0);
-
-  --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-  --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-  --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.10),
-    0 1px 2px -1px hsl(0 0% 0% / 0.10);
-  --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.10),
-    0 1px 2px -1px hsl(0 0% 0% / 0.10);
-  --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.10),
-    0 2px 4px -1px hsl(0 0% 0% / 0.10);
-  --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.10),
-    0 4px 6px -1px hsl(0 0% 0% / 0.10);
-  --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.10),
-    0 8px 10px -1px hsl(0 0% 0% / 0.10);
-  --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+  --sidebar: #1a1814;
+  --sidebar-foreground: #f6f6f6;
+  --sidebar-primary: #ef6037;
+  --sidebar-primary-foreground: #f6f6f6;
+  --sidebar-accent: #2a2721;
+  --sidebar-accent-foreground: #f6f6f6;
+  --sidebar-border: #33312c;
+  --sidebar-ring: #ef6037;
 }
 
+.bg-orange-custom {
+  background-color: var(--orange-custom);
+}
+
+
 /* Forçar Plus Jakarta Sans globalmente (todas as letras do projeto) */
-html, body, #root {
+html,
+body,
+#root {
   font-family: var(--font-sans) !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -243,6 +209,7 @@ html, body, #root {
 .no-time-grid .rbc-time-header-gutter {
   display: none !important;
 }
+
 .no-time-grid .rbc-time-content .rbc-timeslot-group,
 .no-time-grid .rbc-day-slot .rbc-time-slot {
   border-top: 0 !important;

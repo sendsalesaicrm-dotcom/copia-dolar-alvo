@@ -2,12 +2,12 @@ import React from 'react';
 import type { AnnualData } from '../types';
 
 const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value);
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
 };
 
 export const EvolutionTable: React.FC<{ data: AnnualData[] }> = ({ data }) => {
@@ -23,28 +23,27 @@ export const EvolutionTable: React.FC<{ data: AnnualData[] }> = ({ data }) => {
         <table className="min-w-full divide-y divide-border">
           <thead className="bg-muted">
             <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              <th scope="col" className="px-3 sm:px-6 py-3 text-left text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-widest">
                 Ano
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              <th scope="col" className="px-3 sm:px-6 py-3 text-left text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-widest">
                 Total Investido
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Juros Acumulados
+              <th scope="col" className="px-3 sm:px-6 py-3 text-left text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                Juros
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Saldo Acumulado
+              <th scope="col" className="px-3 sm:px-6 py-3 text-left text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                Saldo Final
               </th>
             </tr>
           </thead>
           <tbody className="bg-card divide-y divide-border">
             {data.map((item) => (
-              <tr key={item.year} className="hover:bg-muted/50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">{item.year}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{formatCurrency(item.totalInvested)}</td>
-                {/* Usando a cor primária (laranja) para destaque positivo */}
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-primary font-medium">{formatCurrency(item.totalInterest)}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground font-bold">{formatCurrency(item.balance)}</td>
+              <tr key={item.year} className="hover:bg-muted/50 transition-colors">
+                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm font-bold text-foreground">{item.year}</td>
+                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-muted-foreground">{formatCurrency(item.totalInvested)}</td>
+                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-emerald-500 font-bold">{formatCurrency(item.totalInterest)}</td>
+                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-foreground font-black">{formatCurrency(item.balance)}</td>
               </tr>
             ))}
           </tbody>

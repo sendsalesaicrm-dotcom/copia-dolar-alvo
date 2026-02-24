@@ -54,6 +54,7 @@ export const PasswordForm: React.FC = () => {
           icon={<Lock className="w-5 h-5 text-muted-foreground" />}
           type="password"
           error={error}
+          showPasswordToggle
         />
         <Input
           id="confirm-password"
@@ -63,8 +64,9 @@ export const PasswordForm: React.FC = () => {
           placeholder="Repita a nova senha"
           icon={<Lock className="w-5 h-5 text-muted-foreground" />}
           type="password"
+          showPasswordToggle
         />
-        
+
         <button
           type="submit"
           disabled={loading || !!error}

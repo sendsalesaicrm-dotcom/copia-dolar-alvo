@@ -2,6 +2,7 @@ import React from 'react';
 import { ProfileForm } from '../components/ProfileForm';
 import { PasswordForm } from '../components/PasswordForm';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { AccountDeletion } from '../components/AccountDeletion';
 
 
 const SettingsPage: React.FC = () => {
@@ -12,10 +13,14 @@ const SettingsPage: React.FC = () => {
           <h1 className="text-3xl sm:text-4xl font-bold text-foreground">Configurações</h1>
           <ThemeToggle />
         </div>
-        
+
         <div className="space-y-8">
           <ProfileForm />
           <PasswordForm />
+
+          <div className="pt-8 border-t border-border">
+            <AccountDeletion />
+          </div>
         </div>
       </div>
     </div>

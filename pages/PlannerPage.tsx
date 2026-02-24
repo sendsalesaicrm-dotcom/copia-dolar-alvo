@@ -13,14 +13,14 @@ const TermIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-
 const BRL_RATE = 4.50;
 
 const formatCurrency = (value: number, currency: 'USD' | 'BRL' = 'USD') => {
-    const options: Intl.NumberFormatOptions = {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    };
-    const locale: 'en-US' | 'pt-BR' = currency === 'USD' ? 'en-US' : 'pt-BR';
-    return new Intl.NumberFormat(locale, options).format(value);
+  const options: Intl.NumberFormatOptions = {
+    style: 'currency',
+    currency: currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  };
+  const locale: 'en-US' | 'pt-BR' = currency === 'USD' ? 'en-US' : 'pt-BR';
+  return new Intl.NumberFormat(locale, options).format(value);
 };
 
 const PlannerPage: React.FC = () => {
@@ -53,10 +53,10 @@ const PlannerPage: React.FC = () => {
       isValid = false;
     }
     if (parseFloat(contribution) < 0 || contribution === '') {
-        if (parseFloat(contribution) <= 0 || !contribution) {
-            newErrors.contribution = 'O aporte deve ser um valor positivo.';
-            isValid = false;
-        }
+      if (parseFloat(contribution) <= 0 || !contribution) {
+        newErrors.contribution = 'O aporte deve ser um valor positivo.';
+        isValid = false;
+      }
     }
     if (parseFloat(rate) <= 0 || !rate) {
       newErrors.rate = 'A taxa de juros deve ser um valor positivo.';
@@ -66,15 +66,15 @@ const PlannerPage: React.FC = () => {
       newErrors.term = 'O prazo deve ser um valor positivo.';
       isValid = false;
     }
-    
+
     setErrors(newErrors);
     return isValid;
   };
 
   const calculateProjection = useCallback(() => {
     if (!validateInputs()) {
-        setResults(null);
-        return;
+      setResults(null);
+      return;
     }
 
     const P = parseFloat(contribution);
@@ -86,7 +86,7 @@ const PlannerPage: React.FC = () => {
     const annualRateDecimal = annualRate / 100;
     // i = (1 + R_anual)^(1/12) - 1
     const i = Math.pow(1 + annualRateDecimal, 1 / 12) - 1;
-    
+
     const n = years * 12;
 
     // Formula 1: Future Value (using ** operator)
@@ -106,8 +106,8 @@ const PlannerPage: React.FC = () => {
         const year = Math.ceil(m / 12);
         const totalInvested = P * m;
         const totalInterest = currentBalance - totalInvested;
-        
-        if(!annualData.find(d => d.year === year)){
+
+        if (!annualData.find(d => d.year === year)) {
           annualData.push({
             year,
             balance: currentBalance,
@@ -131,92 +131,98 @@ const PlannerPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
-        <div className="bg-card rounded-2xl shadow-lg p-6 sm:p-8">
-            <div className="text-center mb-8">
-                <h1 className="text-3xl sm:text-4xl font-bold text-foreground">Planejador de Patrimônio</h1>
-                <p className="mt-2 text-md text-muted-foreground">Calcule o futuro do seu patrimônio em dólar com juros compostos.</p>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Grid ajustado para 2 colunas em sm e 4 em lg */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <Input
-                    id="goal"
-                    label="Meta de Patrimônio ($)"
-                    value={goal}
-                    onChange={(e) => setGoal(e.target.value)}
-                    placeholder="300,000"
-                    error={errors.goal}
-                    icon={<GoalIcon />}
-                    type="number"
-                    />
-                    <Input
-                    id="contribution"
-                    label="Aporte Mensal ($)"
-                    value={contribution}
-                    onChange={(e) => setContribution(e.target.value)}
-                    placeholder="200"
-                    error={errors.contribution}
-                    icon={<ContributionIcon />}
-                    type="number"
-                    helperText={contributionInBrl}
-                    />
-                    <Input
-                    id="rate"
-                    label="Taxa de Juros Anual (%)"
-                    value={rate}
-                    onChange={(e) => setRate(e.target.value)}
-                    placeholder="11"
-                    error={errors.rate}
-                    icon={<RateIcon />}
-                    type="number"
-                    />
-                    <Input
-                    id="term"
-                    label="Prazo (anos)"
-                    value={term}
-                    onChange={(e) => setTerm(e.target.value)}
-                    placeholder="20"
-                    error={errors.term}
-                    icon={<TermIcon />}
-                    type="number"
-                    />
-                </div>
-                <div className="flex justify-center pt-2">
-                    <button
-                    type="submit"
-                    className="w-full sm:w-auto px-12 py-3 bg-primary text-primary-foreground font-semibold rounded-lg shadow-md border border-input hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-opacity-75 transition-transform transform hover:scale-[1.02]"
-                    >
-                    Calcular Projeção
-                    </button>
-                </div>
-            </form>
-
-            {results && (
-                <div className="mt-10 pt-8 border-t border-border">
-                    {/* Grid ajustado para 1 coluna em mobile e 2 em md */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <ResultCard
-                        title="Valor Final Projetado"
-                        value={formatCurrency(results.futureValue)}
-                        subValue={`Aprox. ${formatCurrency(results.futureValue * BRL_RATE, 'BRL')}`}
-                        description={`Com aportes de ${formatCurrency(parseFloat(contribution))} (aprox. ${formatCurrency(parseFloat(contribution) * BRL_RATE, 'BRL')}) por mês, você terá este valor.`}
-                        textColorClass="text-green-600 dark:text-green-400"
-                    />
-                    <ResultCard
-                        title="Aporte Necessário"
-                        value={formatCurrency(results.requiredContribution)}
-                        subValue={`Aprox. ${formatCurrency(results.requiredContribution * BRL_RATE, 'BRL')}`}
-                        description={`Para atingir sua meta de ${formatCurrency(parseFloat(goal))} no prazo definido.`}
-                        textColorClass="text-blue-600 dark:text-blue-400"
-                    />
-                    </div>
-                    <EvolutionTable data={results.annualData} />
-                </div>
-            )}
+    <div className="w-full max-w-4xl mx-auto px-4 py-8">
+      <div className="bg-card rounded-2xl shadow-xl p-5 sm:p-10 border border-border">
+        <div className="text-center mb-10">
+          <h1 className="text-2xl sm:text-4xl font-black text-foreground tracking-tight">
+            Planejador de Patrimônio
+          </h1>
+          <p className="mt-3 text-sm sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            Calcule o futuro do seu patrimônio em dólar com juros compostos.
+          </p>
         </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Grid ajustado para 2 colunas em sm e 4 em lg */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Input
+              id="goal"
+              label="Meta de Patrimônio ($)"
+              value={goal}
+              onChange={(e) => setGoal(e.target.value)}
+              placeholder="300,000"
+              error={errors.goal}
+              icon={<GoalIcon />}
+              type="number"
+            />
+            <Input
+              id="contribution"
+              label="Aporte Mensal ($)"
+              value={contribution}
+              onChange={(e) => setContribution(e.target.value)}
+              placeholder="200"
+              error={errors.contribution}
+              icon={<ContributionIcon />}
+              type="number"
+              helperText={contributionInBrl}
+            />
+            <Input
+              id="rate"
+              label="Taxa de Juros Anual (%)"
+              value={rate}
+              onChange={(e) => setRate(e.target.value)}
+              placeholder="11"
+              error={errors.rate}
+              icon={<RateIcon />}
+              type="number"
+            />
+            <Input
+              id="term"
+              label="Prazo (anos)"
+              value={term}
+              onChange={(e) => setTerm(e.target.value)}
+              placeholder="20"
+              error={errors.term}
+              icon={<TermIcon />}
+              type="number"
+            />
+          </div>
+          <div className="flex justify-center pt-2">
+            <button
+              type="submit"
+              className="w-full sm:w-auto px-12 py-3 bg-primary text-primary-foreground font-semibold rounded-lg shadow-md border border-input hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-opacity-75 transition-transform transform hover:scale-[1.02]"
+            >
+              Calcular Projeção
+            </button>
+          </div>
+        </form>
+
+        {results && (
+          <div className="mt-10 pt-8 border-t border-border">
+            {/* Grid ajustado para 1 coluna em mobile e 2 em md */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ResultCard
+                title="Valor Final Projetado"
+                value={formatCurrency(results.futureValue)}
+                subValue={`Aprox. ${formatCurrency(results.futureValue * BRL_RATE, 'BRL')}`}
+                description={`Com aportes de ${formatCurrency(parseFloat(contribution))} (aprox. ${formatCurrency(parseFloat(contribution) * BRL_RATE, 'BRL')}) por mês, você terá este valor.`}
+                textColorClass="text-green-600 dark:text-green-400"
+              />
+              <ResultCard
+                title="Aporte Necessário"
+                value={formatCurrency(results.requiredContribution)}
+                subValue={`Aprox. ${formatCurrency(results.requiredContribution * BRL_RATE, 'BRL')}`}
+                description={`Para atingir sua meta de ${formatCurrency(parseFloat(goal))} no prazo definido.`}
+                textColorClass="text-blue-600 dark:text-blue-400"
+              />
+            </div>
+            <EvolutionTable data={results.annualData} />
+          </div>
+        )}
       </div>
+
+
+    </div>
   );
 };
 
