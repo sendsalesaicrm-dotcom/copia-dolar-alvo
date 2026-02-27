@@ -571,8 +571,14 @@ const CofrinhoPage: React.FC = () => {
       {/* Header removido conforme solicitado */}
 
       <div className="mb-8 p-4 sm:p-6 bg-card rounded-xl shadow-md border border-border w-full max-w-2xl mx-auto">
-        <div className="flex items-center gap-2 mb-4">
-          <Plus className="w-5 h-5 text-primary" />
+        <div className="flex items-center gap-3 mb-4">
+          <img
+            src={theme === 'dark'
+              ? 'https://blobgpedbfdjweiyxbzu.supabase.co/storage/v1/object/public/imagens/porquinho_branco.svg'
+              : 'https://blobgpedbfdjweiyxbzu.supabase.co/storage/v1/object/public/imagens/porquinho.svg'}
+            className="w-10 h-10 object-contain"
+            alt="Cofrinho"
+          />
           <h2 className="text-2xl font-semibold text-foreground">Criar Cofrinho</h2>
         </div>
 
