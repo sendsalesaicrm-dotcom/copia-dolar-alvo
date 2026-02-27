@@ -581,7 +581,7 @@ const CofrinhoPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               id="tabuleiro-objetivo"
-              label="Objetivo Total (USD)"
+              label="Objetivo Total Dólar(USD)"
               value={objetivoTotal}
               onChange={(e) => setObjetivoTotal(formatToUSD(e.target.value))}
               placeholder="10.000,00"
@@ -600,19 +600,16 @@ const CofrinhoPage: React.FC = () => {
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="tabuleiro-data-inicio" className="block text-sm font-medium text-foreground mb-1">
-                Data de Início
-              </label>
-              <input
-                id="tabuleiro-data-inicio"
-                type="date"
-                value={dataInicio}
-                onChange={e => setDataInicio(e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
-                className="block w-full px-3 py-2 border rounded-lg bg-background text-foreground focus:outline-none sm:text-sm border-input focus:ring-ring focus:border-ring"
-              />
-            </div>
+            <Input
+              id="tabuleiro-data-inicio"
+              label="Data de Início"
+              type="date"
+              value={dataInicio}
+              onChange={e => setDataInicio(e.target.value)}
+              min={new Date().toISOString().split('T')[0]}
+              icon={<Target className="w-5 h-5 text-muted-foreground" />}
+              placeholder=""
+            />
             <Input id="tabuleiro-data-fim" label="Data de Fim" value={dataFim} onChange={(e) => setDataFim(e.target.value)} placeholder="" icon={<Target className="w-5 h-5 text-muted-foreground" />} type="date" />
           </div>
 
