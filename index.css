@@ -214,3 +214,9 @@ body,
 .no-time-grid .rbc-day-slot .rbc-time-slot {
   border-top: 0 !important;
 }
+
+/* Fix para o ícone nativo do calendário no modo escuro */
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}

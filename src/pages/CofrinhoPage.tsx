@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Check, Grid3X3, Plus, Target, Trash2, PiggyBank } from 'lucide-react';
+import { Check, Grid3X3, Plus, Target, Trash2, PiggyBank, Calendar } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Input } from '../../components/Input';
@@ -570,8 +570,8 @@ const CofrinhoPage: React.FC = () => {
     <div className="w-full px-0">
       {/* Header removido conforme solicitado */}
 
-      <div className="mb-8 p-4 sm:p-6 bg-card rounded-xl shadow-md border border-border w-full max-w-2xl mx-auto">
-        <div className="flex items-center gap-3 mb-4">
+      <div className="mb-8 p-4 sm:p-6 bg-card rounded-xl shadow-md border border-border w-full max-w-4xl mx-auto">
+        <div className="flex items-center justify-center gap-3 mb-4">
           <img
             src={theme === 'dark'
               ? 'https://blobgpedbfdjweiyxbzu.supabase.co/storage/v1/object/public/imagens/porquinho_branco.svg'
@@ -583,21 +583,23 @@ const CofrinhoPage: React.FC = () => {
         </div>
 
         <form onSubmit={handleCreateMeta} className="space-y-4">
-          <Input id="tabuleiro-nome" label="Nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex: Viagem, Reserva, iPhone" icon={<Target className="w-5 h-5 text-muted-foreground" />} />
+          <Input id="tabuleiro-nome" label="Nome" labelClassName="text-center" className="text-center" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex: Viagem, Reserva, iPhone" icon={<Target className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-muted-foreground'}`} />} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               id="tabuleiro-objetivo"
               label="Objetivo Total Dólar(USD)"
+              labelClassName="text-center"
+              className="text-center"
               value={objetivoTotal}
               onChange={(e) => setObjetivoTotal(formatToUSD(e.target.value))}
               placeholder="10.000,00"
-              inputPrefix={<span className="inline-flex items-center px-3 text-sm text-muted-foreground">$</span>}
+              inputPrefix={<span className={`inline-flex items-center px-3 text-sm ${theme === 'dark' ? 'text-white' : 'text-muted-foreground'}`}>$</span>}
               type="text"
             />
             <div className="w-full">
-              <label className="block text-sm font-medium text-foreground mb-1" htmlFor="tabuleiro-frequencia">Frequência</label>
+              <label className="block text-sm font-medium text-foreground mb-1 text-center" htmlFor="tabuleiro-frequencia">Frequência de Aporte</label>
               <div className="relative rounded-md shadow-sm">
-                <select id="tabuleiro-frequencia" value={frequencia} onChange={(e) => setFrequencia(e.target.value as FrequenciaTabuleiro)} className="block w-full pr-4 py-2 border rounded-lg bg-background text-foreground focus:outline-none sm:text-sm border-input focus:ring-ring focus:border-ring">
+                <select id="tabuleiro-frequencia" value={frequencia} onChange={(e) => setFrequencia(e.target.value as FrequenciaTabuleiro)} className="block w-full pr-4 py-2 border rounded-lg bg-background text-foreground focus:outline-none sm:text-sm border-input focus:ring-ring focus:border-ring text-center">
                   <option value="diaria">Diária</option>
                   <option value="semanal">Semanal</option>
                   <option value="mensal">Mensal</option>
@@ -609,14 +611,15 @@ const CofrinhoPage: React.FC = () => {
             <Input
               id="tabuleiro-data-inicio"
               label="Data de Início"
+              labelClassName="text-center"
+              className="text-center"
               type="date"
               value={dataInicio}
               onChange={e => setDataInicio(e.target.value)}
               min={new Date().toISOString().split('T')[0]}
-              icon={<Target className="w-5 h-5 text-muted-foreground" />}
               placeholder=""
             />
-            <Input id="tabuleiro-data-fim" label="Data de Fim" value={dataFim} onChange={(e) => setDataFim(e.target.value)} placeholder="" icon={<Target className="w-5 h-5 text-muted-foreground" />} type="date" />
+            <Input id="tabuleiro-data-fim" label="Data Final" labelClassName="text-center" className="text-center" value={dataFim} onChange={(e) => setDataFim(e.target.value)} placeholder="" type="date" />
           </div>
 
           <button type="submit" disabled={creating} className="w-full py-3 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-opacity-75 transition-all duration-300 flex items-center justify-center gap-2 text-base">

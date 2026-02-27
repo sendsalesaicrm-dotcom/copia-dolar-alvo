@@ -1,16 +1,44 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import { useTheme } from '../src/context/ThemeContext';
 import { Input } from '../components/Input';
 import { ResultCard } from '../components/ResultCard';
 import { EvolutionTable } from '../components/EvolutionTable';
 import type { ProjectionResult, AnnualData } from '../types';
 
 // Icons for inputs
-const GoalIcon = () => <span className="text-muted-foreground">$</span>;
-const ContributionIcon = () => <span className="text-muted-foreground">$</span>;
-const RateIcon = () => <span className="text-muted-foreground">%</span>;
-const TermIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>;
+const GoalIcon = ({ colorClass }: { colorClass: string }) => <span className={colorClass}>$</span>;
+const ContributionIcon = ({ colorClass }: { colorClass: string }) => <span className={colorClass}>$</span>;
+const RateIcon = ({ colorClass }: { colorClass: string }) => <span className={colorClass}>%</span>;
+const TermIcon = ({ colorClass }: { colorClass: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 ${colorClass}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+  </svg>
+);
 
 const BRL_RATE = 4.50;
+
+// Helpers para formatação de moeda (USD com formato numérico PT-BR)
+const formatToUSD = (value: string | number) => {
+  if (typeof value === 'number') {
+    return new Intl.NumberFormat('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+  }
+  const cleanValue = value.replace(/\D/g, '');
+  if (!cleanValue) return '';
+  const numericValue = parseInt(cleanValue, 10) / 100;
+  return new Intl.NumberFormat('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(numericValue);
+};
+
+const parseUSDToNumber = (value: string) => {
+  if (!value) return 0;
+  const numericString = value.replace(/\./g, '').replace(',', '.');
+  return parseFloat(numericString);
+};
 
 const formatCurrency = (value: number, currency: 'USD' | 'BRL' = 'USD') => {
   const options: Intl.NumberFormatOptions = {
@@ -24,8 +52,11 @@ const formatCurrency = (value: number, currency: 'USD' | 'BRL' = 'USD') => {
 };
 
 const PlannerPage: React.FC = () => {
-  const [goal, setGoal] = useState('300000');
-  const [contribution, setContribution] = useState('200');
+  const { theme } = useTheme();
+  const iconColorClass = theme === 'dark' ? 'text-white' : 'text-muted-foreground';
+
+  const [goal, setGoal] = useState(formatToUSD(300000));
+  const [contribution, setContribution] = useState(formatToUSD(200));
   const [rate, setRate] = useState('11');
   const [term, setTerm] = useState('20');
   const [results, setResults] = useState<ProjectionResult | null>(null);
@@ -37,7 +68,7 @@ const PlannerPage: React.FC = () => {
   });
 
   const contributionInBrl = useMemo(() => {
-    const numericContribution = parseFloat(contribution);
+    const numericContribution = parseUSDToNumber(contribution);
     if (!numericContribution || numericContribution <= 0) {
       return '';
     }
@@ -48,15 +79,16 @@ const PlannerPage: React.FC = () => {
     const newErrors = { goal: '', contribution: '', rate: '', term: '' };
     let isValid = true;
 
-    if (parseFloat(goal) <= 0 || !goal) {
+    const numericGoal = parseUSDToNumber(goal);
+    const numericContribution = parseUSDToNumber(contribution);
+
+    if (numericGoal <= 0 || isNaN(numericGoal)) {
       newErrors.goal = 'A meta deve ser um valor positivo.';
       isValid = false;
     }
-    if (parseFloat(contribution) < 0 || contribution === '') {
-      if (parseFloat(contribution) <= 0 || !contribution) {
-        newErrors.contribution = 'O aporte deve ser um valor positivo.';
-        isValid = false;
-      }
+    if (numericContribution < 0 || isNaN(numericContribution)) {
+      newErrors.contribution = 'O aporte deve ser um valor positivo.';
+      isValid = false;
     }
     if (parseFloat(rate) <= 0 || !rate) {
       newErrors.rate = 'A taxa de juros deve ser um valor positivo.';
@@ -77,8 +109,8 @@ const PlannerPage: React.FC = () => {
       return;
     }
 
-    const P = parseFloat(contribution);
-    const targetGoal = parseFloat(goal);
+    const P = parseUSDToNumber(contribution);
+    const targetGoal = parseUSDToNumber(goal);
     const annualRate = parseFloat(rate);
     const years = parseInt(term, 10);
 
@@ -147,23 +179,23 @@ const PlannerPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <Input
               id="goal"
-              label="Meta de Patrimônio ($)"
+              label="Patrimônio Dólar em USD($)"
               value={goal}
-              onChange={(e) => setGoal(e.target.value)}
-              placeholder="300,000"
+              onChange={(e) => setGoal(formatToUSD(e.target.value))}
+              placeholder="300.000,00"
               error={errors.goal}
-              icon={<GoalIcon />}
-              type="number"
+              icon={<GoalIcon colorClass={iconColorClass} />}
+              type="text"
             />
             <Input
               id="contribution"
-              label="Aporte Mensal ($)"
+              label="Aporte Mensal Dólar USD($)"
               value={contribution}
-              onChange={(e) => setContribution(e.target.value)}
-              placeholder="200"
+              onChange={(e) => setContribution(formatToUSD(e.target.value))}
+              placeholder="200,00"
               error={errors.contribution}
-              icon={<ContributionIcon />}
-              type="number"
+              icon={<ContributionIcon colorClass={iconColorClass} />}
+              type="text"
               helperText={contributionInBrl}
             />
             <Input
@@ -173,7 +205,7 @@ const PlannerPage: React.FC = () => {
               onChange={(e) => setRate(e.target.value)}
               placeholder="11"
               error={errors.rate}
-              icon={<RateIcon />}
+              icon={<RateIcon colorClass={iconColorClass} />}
               type="number"
             />
             <Input
@@ -183,7 +215,7 @@ const PlannerPage: React.FC = () => {
               onChange={(e) => setTerm(e.target.value)}
               placeholder="20"
               error={errors.term}
-              icon={<TermIcon />}
+              icon={<TermIcon colorClass={iconColorClass} />}
               type="number"
             />
           </div>
@@ -205,14 +237,14 @@ const PlannerPage: React.FC = () => {
                 title="Valor Final Projetado"
                 value={formatCurrency(results.futureValue)}
                 subValue={`Aprox. ${formatCurrency(results.futureValue * BRL_RATE, 'BRL')}`}
-                description={`Com aportes de ${formatCurrency(parseFloat(contribution))} (aprox. ${formatCurrency(parseFloat(contribution) * BRL_RATE, 'BRL')}) por mês, você terá este valor.`}
+                description={`Com aportes de ${formatCurrency(parseUSDToNumber(contribution))} (aprox. ${formatCurrency(parseUSDToNumber(contribution) * BRL_RATE, 'BRL')}) por mês, você terá este valor.`}
                 textColorClass="text-green-600 dark:text-green-400"
               />
               <ResultCard
                 title="Aporte Necessário"
                 value={formatCurrency(results.requiredContribution)}
                 subValue={`Aprox. ${formatCurrency(results.requiredContribution * BRL_RATE, 'BRL')}`}
-                description={`Para atingir sua meta de ${formatCurrency(parseFloat(goal))} no prazo definido.`}
+                description={`Para atingir sua meta de ${formatCurrency(parseUSDToNumber(goal))} no prazo definido.`}
                 textColorClass="text-blue-600 dark:text-blue-400"
               />
             </div>

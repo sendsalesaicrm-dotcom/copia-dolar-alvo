@@ -13,9 +13,10 @@ interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, '
   inputPrefix?: React.ReactNode;
   type?: string;
   showPasswordToggle?: boolean;
+  labelClassName?: string;
 }
 
-export const Input: React.FC<InputProps> = ({ id, label, value, onChange, placeholder, error, helperText, icon, inputPrefix, type = 'text', showPasswordToggle = false, ...props }) => {
+export const Input: React.FC<InputProps> = ({ id, label, value, onChange, placeholder, error, helperText, icon, inputPrefix, type = 'text', showPasswordToggle = false, labelClassName = '', ...props }) => {
   const [showPassword, setShowPassword] = useState(false);
   const effectiveType = useMemo(() => {
     if (showPasswordToggle && type === 'password') {
@@ -25,7 +26,7 @@ export const Input: React.FC<InputProps> = ({ id, label, value, onChange, placeh
   }, [showPasswordToggle, type, showPassword]);
   return (
     <div className="w-full">
-      <label htmlFor={id} className="block text-sm font-medium text-foreground mb-1">
+      <label htmlFor={id} className={`block text-sm font-medium text-foreground mb-1 ${labelClassName}`}>
         {label}
       </label>
       <div className="relative rounded-md shadow-sm">
