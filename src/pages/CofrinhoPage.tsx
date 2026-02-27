@@ -13,6 +13,29 @@ function cn(...classes: (string | undefined | null | false)[]) {
 import { utcToZonedTime } from 'date-fns-tz';
 import { useSettings } from '../context/SettingsContext';
 import { useTheme } from '../context/ThemeContext';
+
+// Helpers para formatação de moeda
+const formatToBRL = (value: string | number) => {
+  if (typeof value === 'number') {
+    return new Intl.NumberFormat('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+  }
+  const cleanValue = value.replace(/\D/g, '');
+  if (!cleanValue) return '';
+  const numericValue = parseInt(cleanValue, 10) / 100;
+  return new Intl.NumberFormat('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(numericValue);
+};
+
+const parseBRLToNumber = (value: string) => {
+  if (!value) return 0;
+  const numericString = value.replace(/\./g, '').replace(',', '.');
+  return parseFloat(numericString);
+};
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription, DialogClose } from '../components/ui/dialog';
 import { dismissToast, showError, showLoading, showSuccess } from '../utils/toast';
 import type { GridValor, MetaTabuleiro } from '@/types';
@@ -218,7 +241,7 @@ const CofrinhoPage: React.FC = () => {
   const { theme } = useTheme();
 
   const [nome, setNome] = useState('');
-  const [objetivoTotal, setObjetivoTotal] = useState('10000');
+  const [objetivoTotal, setObjetivoTotal] = useState(formatToBRL(10000));
   const [frequencia, setFrequencia] = useState<FrequenciaTabuleiro>('diaria');
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
@@ -390,8 +413,8 @@ const CofrinhoPage: React.FC = () => {
       return;
     }
 
-    const objetivo = Number(objetivoTotal);
-    if (!Number.isFinite(objetivo) || objetivo <= 0) {
+    const objetivo = parseBRLToNumber(objetivoTotal);
+    if (isNaN(objetivo) || objetivo <= 0) {
       showError('Informe um objetivo total válido.');
       return;
     }
@@ -431,7 +454,7 @@ const CofrinhoPage: React.FC = () => {
       setSelectedMetaId(metaId || fetched[0]?.id || null);
 
       setNome('');
-      setObjetivoTotal('10000');
+      setObjetivoTotal(formatToBRL(10000));
       setFrequencia('diaria');
       setDataInicio('');
       setDataFim('');
@@ -556,7 +579,15 @@ const CofrinhoPage: React.FC = () => {
         <form onSubmit={handleCreateMeta} className="space-y-4">
           <Input id="tabuleiro-nome" label="Nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex: Viagem, Reserva, iPhone" icon={<Target className="w-5 h-5 text-muted-foreground" />} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input id="tabuleiro-objetivo" label="Objetivo Total (R$)" value={objetivoTotal} onChange={(e) => setObjetivoTotal(e.target.value)} placeholder="10000" inputPrefix={<span className="inline-flex items-center px-3 text-sm text-muted-foreground">R$</span>} type="number" />
+            <Input
+              id="tabuleiro-objetivo"
+              label="Objetivo Total (R$)"
+              value={objetivoTotal}
+              onChange={(e) => setObjetivoTotal(formatToBRL(e.target.value))}
+              placeholder="10.000,00"
+              inputPrefix={<span className="inline-flex items-center px-3 text-sm text-muted-foreground">R$</span>}
+              type="text"
+            />
             <div className="w-full">
               <label className="block text-sm font-medium text-foreground mb-1" htmlFor="tabuleiro-frequencia">Frequência</label>
               <div className="relative rounded-md shadow-sm">
