@@ -14,8 +14,8 @@ import { utcToZonedTime } from 'date-fns-tz';
 import { useSettings } from '../context/SettingsContext';
 import { useTheme } from '../context/ThemeContext';
 
-// Helpers para formatação de moeda
-const formatToBRL = (value: string | number) => {
+// Helpers para formatação de moeda (Mantendo formato numérico PT-BR conforme pedido anterior, mas para USD)
+const formatToUSD = (value: string | number) => {
   if (typeof value === 'number') {
     return new Intl.NumberFormat('pt-BR', {
       minimumFractionDigits: 2,
@@ -31,7 +31,7 @@ const formatToBRL = (value: string | number) => {
   }).format(numericValue);
 };
 
-const parseBRLToNumber = (value: string) => {
+const parseUSDToNumber = (value: string) => {
   if (!value) return 0;
   const numericString = value.replace(/\./g, '').replace(',', '.');
   return parseFloat(numericString);
@@ -45,7 +45,7 @@ type FrequenciaTabuleiro = 'diaria' | 'semanal' | 'mensal';
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
-    currency: 'BRL',
+    currency: 'USD',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
@@ -241,7 +241,7 @@ const CofrinhoPage: React.FC = () => {
   const { theme } = useTheme();
 
   const [nome, setNome] = useState('');
-  const [objetivoTotal, setObjetivoTotal] = useState(formatToBRL(10000));
+  const [objetivoTotal, setObjetivoTotal] = useState(formatToUSD(10000));
   const [frequencia, setFrequencia] = useState<FrequenciaTabuleiro>('diaria');
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
@@ -413,7 +413,7 @@ const CofrinhoPage: React.FC = () => {
       return;
     }
 
-    const objetivo = parseBRLToNumber(objetivoTotal);
+    const objetivo = parseUSDToNumber(objetivoTotal);
     if (isNaN(objetivo) || objetivo <= 0) {
       showError('Informe um objetivo total válido.');
       return;
@@ -454,7 +454,7 @@ const CofrinhoPage: React.FC = () => {
       setSelectedMetaId(metaId || fetched[0]?.id || null);
 
       setNome('');
-      setObjetivoTotal(formatToBRL(10000));
+      setObjetivoTotal(formatToUSD(10000));
       setFrequencia('diaria');
       setDataInicio('');
       setDataFim('');
@@ -581,11 +581,11 @@ const CofrinhoPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               id="tabuleiro-objetivo"
-              label="Objetivo Total (R$)"
+              label="Objetivo Total (USD)"
               value={objetivoTotal}
-              onChange={(e) => setObjetivoTotal(formatToBRL(e.target.value))}
+              onChange={(e) => setObjetivoTotal(formatToUSD(e.target.value))}
               placeholder="10.000,00"
-              inputPrefix={<span className="inline-flex items-center px-3 text-sm text-muted-foreground">R$</span>}
+              inputPrefix={<span className="inline-flex items-center px-3 text-sm text-muted-foreground">$</span>}
               type="text"
             />
             <div className="w-full">
