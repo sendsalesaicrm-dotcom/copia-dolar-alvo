@@ -599,7 +599,7 @@ const CofrinhoPage: React.FC = () => {
             <div className="w-full">
               <label className="block text-sm font-medium text-foreground mb-1 text-center" htmlFor="tabuleiro-frequencia">Frequência de Aporte</label>
               <div className="relative rounded-md shadow-sm">
-                <select id="tabuleiro-frequencia" value={frequencia} onChange={(e) => setFrequencia(e.target.value as FrequenciaTabuleiro)} className="block w-full pr-4 py-2 border rounded-lg bg-background text-foreground focus:outline-none sm:text-sm border-input focus:ring-ring focus:border-ring text-center">
+                <select id="tabuleiro-frequencia" value={frequencia} onChange={(e) => setFrequencia(e.target.value as FrequenciaTabuleiro)} className="block w-full pr-10 py-2 border rounded-lg bg-background text-foreground focus:outline-none sm:text-sm border-input focus:ring-ring focus:border-ring text-center">
                   <option value="diaria">Diária</option>
                   <option value="semanal">Semanal</option>
                   <option value="mensal">Mensal</option>
@@ -619,7 +619,16 @@ const CofrinhoPage: React.FC = () => {
               min={new Date().toISOString().split('T')[0]}
               placeholder=""
             />
-            <Input id="tabuleiro-data-fim" label="Data Final" labelClassName="text-center" className="text-center" value={dataFim} onChange={(e) => setDataFim(e.target.value)} placeholder="" type="date" />
+            <Input
+              id="tabuleiro-data-fim"
+              label="Data Final"
+              labelClassName="text-center"
+              className="text-center"
+              value={dataFim}
+              onChange={(e) => setDataFim(e.target.value)}
+              placeholder=""
+              type="date"
+            />
           </div>
 
           <button type="submit" disabled={creating} className="w-full py-3 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-opacity-75 transition-all duration-300 flex items-center justify-center gap-2 text-base">

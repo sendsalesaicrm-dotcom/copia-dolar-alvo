@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../src/context/AuthContext';
 import { supabase } from '../src/lib/supabase';
 import { showError } from '../src/utils/toast';
@@ -6,15 +7,124 @@ import { CofrinhoProgressPieChart } from '../src/components/CofrinhoProgressPieC
 import { ExchangeRateChart } from '../components/ExchangeRateChart';
 import type { FinancialGoal, MetaTabuleiro, GridValor } from '../types';
 
-// import { DollarSign, TrendingUp, TrendingDown } from 'lucide-react'; 
-
 interface CurrencyQuote {
-  code: string;      // Ex: USD
-  codein: string;    // Ex: BRL
-  name: string;      // Ex: Dólar Americano/Real Brasileiro
-  bid: string;       // Compra
-  pctChange: string; // Variação %
-  create_date: string; // Data de criação
+  code: string;
+  codein: string;
+  name: string;
+  bid: string;
+  pctChange: string;
+  create_date: string;
+}
+
+const CofrinhoDataContext = React.createContext<any>(null);
+
+const useCofrinhoData = () => {
+  const context = React.useContext(CofrinhoDataContext);
+  if (!context) throw new Error('useCofrinhoData must be used within a CofrinhoDataProvider');
+  return context;
+};
+
+const CofrinhoDataProvider: React.FC<{ children: React.ReactNode, values: any }> = ({ children, values }) => {
+  return (
+    <CofrinhoDataContext.Provider value={values}>
+      {children}
+    </CofrinhoDataContext.Provider>
+  );
+};
+
+function RenderCofrinhoContent() {
+  const { cofrinhos, selectedCofrinhoId, setSelectedCofrinhoId, selectedCofrinho, cofrinhoProgress } = useCofrinhoData();
+
+  return (
+    <>
+      <div className="flex flex-col gap-4 mb-6">
+        <h2 className="text-xl font-bold text-card-foreground">Progresso do Cofrinho</h2>
+        <div className="w-full">
+          <label className="block text-[10px] uppercase tracking-wider font-bold text-card-foreground/50 mb-1.5 ml-1">Selecionar Cofrinho</label>
+          <select
+            value={selectedCofrinhoId ?? ''}
+            onChange={(e) => setSelectedCofrinhoId(e.target.value || null)}
+            className="w-full px-4 py-2.5 bg-background border border-border rounded-xl text-card-foreground text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none shadow-sm font-medium"
+          >
+            {cofrinhos.length === 0 ? (
+              <option value="">Nenhum cofrinho</option>
+            ) : (
+              cofrinhos.map((m: any) => (
+                <option key={m.id} value={m.id}>
+                  {m.nome ?? 'Cofrinho'}
+                </option>
+              ))
+            )}
+          </select>
+        </div>
+      </div>
+
+      <div className="flex-1 flex flex-col">
+        {cofrinhos.length === 0 || !selectedCofrinho || !cofrinhoProgress ? (
+          <div className="flex-1 flex items-center justify-center text-center p-8 border-2 border-dashed border-border/50 rounded-2xl">
+            <p className="text-sm text-card-foreground/50">Crie um cofrinho para visualizar o progresso aqui.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col h-full space-y-8">
+            <div className="flex-1 min-h-[250px] flex items-center justify-center">
+              <div className="w-full">
+                <CofrinhoProgressPieChart objetivo={cofrinhoProgress.objetivo} totalMarcado={cofrinhoProgress.totalMarcado} />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-2 text-xs">
+                <div className="flex justify-between py-2.5 border-b border-border/50">
+                  <span className="text-card-foreground/60 font-medium">Frequência:</span>
+                  <span className="font-bold text-card-foreground uppercase tracking-tight">
+                    {(() => {
+                      switch (selectedCofrinho.frequencia) {
+                        case 'diaria': return 'Diário';
+                        case 'semanal': return 'Semanal';
+                        case 'mensal': return 'Mensal';
+                        default: return '-';
+                      }
+                    })()}
+                  </span>
+                </div>
+                <div className="flex justify-between py-2.5 border-b border-border/50">
+                  <span className="text-card-foreground/60 font-medium">Data de Início:</span>
+                  <span className="font-bold text-card-foreground">{selectedCofrinho.data_inicio ? new Date(selectedCofrinho.data_inicio).toLocaleDateString('pt-BR') : '-'}</span>
+                </div>
+                <div className="flex justify-between py-2.5 border-b border-border/50">
+                  <span className="text-card-foreground/60 font-medium">Data Final:</span>
+                  <span className="font-bold text-card-foreground">{selectedCofrinho.data_fim ? new Date(selectedCofrinho.data_fim).toLocaleDateString('pt-BR') : '-'}</span>
+                </div>
+                <div className="flex justify-between py-2.5 border-b border-border/50">
+                  <span className="text-card-foreground/60 font-medium">Meta Total:</span>
+                  <span className="font-bold text-card-foreground">
+                    $ {cofrinhoProgress.objetivo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="flex justify-between py-2.5">
+                  <span className="text-card-foreground/60 font-medium">Acumulado:</span>
+                  <span className="font-bold text-card-foreground text-emerald-500">
+                    $ {cofrinhoProgress.totalMarcado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-2 grid grid-cols-2 gap-4">
+                <div className="bg-card-foreground/[0.03] p-4 rounded-2xl border border-border/50 flex flex-col justify-center">
+                  <p className="text-[10px] text-card-foreground/50 uppercase font-black mb-1">DIAS RESTANTES</p>
+                  <p className="text-2xl font-black text-[#ef6037]">{cofrinhoProgress.daysRemaining ?? '0'}</p>
+                </div>
+                <div className="bg-card-foreground/[0.03] p-4 rounded-2xl border border-border/50 flex flex-col justify-center">
+                  <p className="text-[10px] text-card-foreground/50 uppercase font-black mb-1">PARCELAS</p>
+                  <p className="text-2xl font-black text-[#ef6037]">{cofrinhoProgress.remainingInstallments}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  );
 }
 
 const CurrencyCard = ({
@@ -74,7 +184,6 @@ const CurrencyCard = ({
 };
 
 const DashboardPage: React.FC = () => {
-  // Estado para múltiplas moedas
   const [cotacoes, setCotacoes] = useState<Record<string, CurrencyQuote> | null>(null);
   const [activeCurrency, setActiveCurrency] = useState('USD-BRL');
 
@@ -92,6 +201,7 @@ const DashboardPage: React.FC = () => {
     const intervalo = setInterval(fetchCotacoes, 30000);
     return () => clearInterval(intervalo);
   }, []);
+
   const { user, loading: authLoading } = useAuth();
   const [goals, setGoals] = useState<FinancialGoal[]>([]);
   const [loadingGoals, setLoadingGoals] = useState(true);
@@ -103,82 +213,21 @@ const DashboardPage: React.FC = () => {
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: true });
-
-    if (error) {
-      console.error('Error fetching goals:', error);
-      showError('Erro ao carregar metas financeiras para o dashboard.');
-      return [];
-    }
+    if (error) return [];
     return data as FinancialGoal[];
   }, []);
 
-  // Effect to fetch initial goals
   useEffect(() => {
-    if (authLoading) {
-      return;
-    }
-
+    if (authLoading) return;
     if (user) {
       setLoadingGoals(true);
       fetchGoals(user.id).then(fetchedGoals => {
         setGoals(fetchedGoals);
-        if (fetchedGoals.length > 0) {
-          // Select the first goal by default, but only if no goal is currently selected
-          setSelectedGoalId(prevId => prevId || fetchedGoals[0].id);
-        } else {
-          setSelectedGoalId(null);
-        }
-      }).finally(() => {
-        setLoadingGoals(false);
-      });
-    } else {
-      setLoadingGoals(false);
-      setGoals([]);
-      setSelectedGoalId(null);
+        if (fetchedGoals.length > 0) setSelectedGoalId(prevId => prevId || fetchedGoals[0].id);
+      }).finally(() => setLoadingGoals(false));
     }
   }, [user, authLoading, fetchGoals]);
 
-  // Effect for Realtime subscription
-  useEffect(() => {
-    if (!user) return;
-
-    const channel = supabase
-      .channel('dashboard_goals_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'financial_goals',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          const newGoal = payload.new as FinancialGoal | null;
-          const oldGoal = payload.old as FinancialGoal | null;
-
-          setGoals(prevGoals => {
-            if (payload.eventType === 'INSERT' && newGoal) {
-              return [...prevGoals, newGoal];
-            } else if (payload.eventType === 'UPDATE' && newGoal) {
-              return prevGoals.map(goal => (goal.id === newGoal.id ? newGoal : goal));
-            } else if (payload.eventType === 'DELETE' && oldGoal) {
-              return prevGoals.filter(goal => goal.id !== oldGoal.id);
-            }
-            return prevGoals;
-          });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user]);
-
-
-  const selectedGoal = goals.find(g => g.id === selectedGoalId);
-
-  // ===== Cofrinho progress (metas tipo 'tabuleiro') =====
   const [cofrinhos, setCofrinhos] = useState<MetaTabuleiro[]>([]);
   const [selectedCofrinhoId, setSelectedCofrinhoId] = useState<string | null>(null);
   const [gridCofrinho, setGridCofrinho] = useState<GridValor[]>([]);
@@ -191,11 +240,8 @@ const DashboardPage: React.FC = () => {
       .eq('tipo', 'tabuleiro')
       .not('objetivo_total', 'is', null)
       .order('created_at', { ascending: false });
-    if (error) {
-      console.error('Error fetching cofrinhos:', error);
-      return [] as MetaTabuleiro[];
-    }
-    return (data ?? []) as MetaTabuleiro[];
+    if (error) return [];
+    return data as MetaTabuleiro[];
   }, []);
 
   const fetchGrid = useCallback(async (metaId: string) => {
@@ -204,33 +250,22 @@ const DashboardPage: React.FC = () => {
       .select('id, meta_id, valor, marcado, posicao, data_prevista')
       .eq('meta_id', metaId)
       .order('posicao', { ascending: true });
-    if (error) {
-      console.error('Error fetching grid for cofrinho:', error);
-      return [] as GridValor[];
-    }
-    return (data ?? []) as GridValor[];
+    if (error) return [];
+    return data as GridValor[];
   }, []);
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) {
-      setCofrinhos([]);
-      setSelectedCofrinhoId(null);
-      setGridCofrinho([]);
-      return;
+    if (user) {
+      fetchCofrinhos(user.id).then((data) => {
+        setCofrinhos(data);
+        setSelectedCofrinhoId((prev) => prev ?? (data[0]?.id ?? null));
+      });
     }
-    fetchCofrinhos(user.id).then((data) => {
-      setCofrinhos(data);
-      setSelectedCofrinhoId((prev) => prev ?? (data[0]?.id ?? null));
-    });
   }, [user, authLoading, fetchCofrinhos]);
 
   useEffect(() => {
-    if (!selectedCofrinhoId) {
-      setGridCofrinho([]);
-      return;
-    }
-    fetchGrid(selectedCofrinhoId).then(setGridCofrinho);
+    if (selectedCofrinhoId) fetchGrid(selectedCofrinhoId).then(setGridCofrinho);
   }, [selectedCofrinhoId, fetchGrid]);
 
   const selectedCofrinho = useMemo(() => cofrinhos.find(c => c.id === selectedCofrinhoId) ?? null, [cofrinhos, selectedCofrinhoId]);
@@ -244,136 +279,67 @@ const DashboardPage: React.FC = () => {
       if (selectedCofrinho.data_fim) {
         const end = new Date(selectedCofrinho.data_fim);
         const today = new Date();
-        const startDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
-        const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 0, 0, 0, 0);
-        const diff = Math.ceil((endDay.getTime() - startDay.getTime()) / (1000 * 60 * 60 * 24));
+        const diff = Math.ceil((new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime() - new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()) / (1000 * 60 * 60 * 24));
         daysRemaining = Math.max(0, diff);
       }
     } catch { }
     return { objetivo, totalMarcado, remainingInstallments, daysRemaining };
   }, [selectedCofrinho, gridCofrinho]);
 
-  // No spinner during navigation/data loading.
-  // The UI below already handles empty/partial state safely.
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const handleDragEnd = (_: any, info: any) => {
+    if (info.offset.x < -50 && currentSlide < 1) setCurrentSlide(1);
+    else if (info.offset.x > 50 && currentSlide > 0) setCurrentSlide(0);
+  };
+
+  const cofrinhoValues = { cofrinhos, selectedCofrinhoId, setSelectedCofrinhoId, selectedCofrinho, cofrinhoProgress };
 
   return (
-    <div className="w-full max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8 items-stretch">
-        {/* Lado Esquerdo: Gráfico + Grid de Moedas */}
-        <div className="flex flex-col gap-8">
-          <div className="w-full">
+    <CofrinhoDataProvider values={cofrinhoValues}>
+      <div className="w-full max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        <div className="hidden lg:grid lg:grid-cols-[1fr_350px] gap-8 items-stretch">
+          <div className="flex flex-col gap-8">
             <ExchangeRateChart currency={activeCurrency} setCurrency={setActiveCurrency} />
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3 sm:gap-4">
+              <CurrencyCard label="USD: Dólar" quote={cotacoes?.USDBRL} selected={activeCurrency === 'USD-BRL'} onClick={() => setActiveCurrency('USD-BRL')} />
+              <CurrencyCard label="BTC: Bitcoin" quote={cotacoes?.BTCBRL} selected={activeCurrency === 'BTC-BRL'} onClick={() => setActiveCurrency('BTC-BRL')} />
+              <CurrencyCard label="EUR: Euro" quote={cotacoes?.EURBRL} selected={activeCurrency === 'EUR-BRL'} onClick={() => setActiveCurrency('EUR-BRL')} />
+              <CurrencyCard label="ETH: Ethereum" quote={cotacoes?.ETHBRL} selected={activeCurrency === 'ETH-BRL'} onClick={() => setActiveCurrency('ETH-BRL')} />
+            </div>
           </div>
-
-          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3 sm:gap-4">
-            <CurrencyCard
-              label="USD: Dólar"
-              quote={cotacoes?.USDBRL}
-              selected={activeCurrency === 'USD-BRL'}
-              onClick={() => setActiveCurrency('USD-BRL')}
-            />
-            <CurrencyCard
-              label="BTC: Bitcoin"
-              quote={cotacoes?.BTCBRL}
-              selected={activeCurrency === 'BTC-BRL'}
-              onClick={() => setActiveCurrency('BTC-BRL')}
-            />
-            <CurrencyCard
-              label="EUR: Euro"
-              quote={cotacoes?.EURBRL}
-              selected={activeCurrency === 'EUR-BRL'}
-              onClick={() => setActiveCurrency('EUR-BRL')}
-            />
-            <CurrencyCard
-              label="ETH: Ethereum"
-              quote={cotacoes?.ETHBRL}
-              selected={activeCurrency === 'ETH-BRL'}
-              onClick={() => setActiveCurrency('ETH-BRL')}
-            />
+          <div className="bg-card rounded-2xl shadow-sm p-6 border border-border flex flex-col h-full">
+            <RenderCofrinhoContent />
           </div>
         </div>
 
-        {/* Lado Direito: Cofrinho Progress (Esticado para alinhar a base) */}
-        <div className="bg-card rounded-2xl shadow-sm p-6 sm:p-8 border border-border flex flex-col h-full">
-          <div className="flex flex-col gap-4 mb-6">
-            <h2 className="text-xl font-bold text-card-foreground">Progresso do Cofrinho</h2>
-            <div className="w-full">
-              <label className="block text-[10px] uppercase tracking-wider font-bold text-card-foreground/50 mb-1.5 ml-1">Selecionar Cofrinho</label>
-              <select
-                value={selectedCofrinhoId ?? ''}
-                onChange={(e) => setSelectedCofrinhoId(e.target.value || null)}
-                className="w-full px-4 py-2.5 bg-background border border-border rounded-xl text-card-foreground text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none shadow-sm font-medium"
-              >
-                {cofrinhos.length === 0 ? (
-                  <option value="">Nenhum cofrinho</option>
-                ) : (
-                  cofrinhos.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.nome ?? 'Cofrinho'}
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
-          </div>
-
-          <div className="flex-1 flex flex-col">
-            {cofrinhos.length === 0 || !selectedCofrinho || !cofrinhoProgress ? (
-              <div className="flex-1 flex items-center justify-center text-center p-8 border-2 border-dashed border-border/50 rounded-2xl">
-                <p className="text-sm text-card-foreground/50">Crie um cofrinho para visualizar o progresso aqui.</p>
-              </div>
-            ) : (
-              <div className="flex flex-col h-full space-y-8">
-                {/* O gráfico dentro agora ocupa o espaço central */}
-                <div className="flex-1 min-h-[300px] flex items-center justify-center">
-                  <div className="w-full">
-                    <CofrinhoProgressPieChart objetivo={cofrinhoProgress.objetivo} totalMarcado={cofrinhoProgress.totalMarcado} />
+        <div className="lg:hidden flex flex-col gap-6">
+          <motion.div drag="x" dragConstraints={{ left: 0, right: 0 }} onDragEnd={handleDragEnd} className="relative w-full overflow-hidden">
+            <AnimatePresence mode="wait">
+              {currentSlide === 0 ? (
+                <motion.div key="slide0" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} transition={{ duration: 0.3 }} className="flex flex-col gap-8">
+                  <ExchangeRateChart currency={activeCurrency} setCurrency={setActiveCurrency} />
+                  <div className="grid grid-cols-2 gap-3">
+                    <CurrencyCard label="USD: Dólar" quote={cotacoes?.USDBRL} selected={activeCurrency === 'USD-BRL'} onClick={() => setActiveCurrency('USD-BRL')} />
+                    <CurrencyCard label="BTC: Bitcoin" quote={cotacoes?.BTCBRL} selected={activeCurrency === 'BTC-BRL'} onClick={() => setActiveCurrency('BTC-BRL')} />
+                    <CurrencyCard label="EUR: Euro" quote={cotacoes?.EURBRL} selected={activeCurrency === 'EUR-BRL'} onClick={() => setActiveCurrency('EUR-BRL')} />
+                    <CurrencyCard label="ETH: Ethereum" quote={cotacoes?.ETHBRL} selected={activeCurrency === 'ETH-BRL'} onClick={() => setActiveCurrency('ETH-BRL')} />
                   </div>
-                </div>
-
-                <div className="space-y-4">
-                  {/* Info do tipo de aporte e período */}
-                  <div className="grid grid-cols-1 gap-2 text-xs">
-                    <div className="flex justify-between py-2.5 border-b border-border/50">
-                      <span className="text-card-foreground/60 font-medium">Frequência:</span>
-                      <span className="font-bold text-card-foreground uppercase tracking-tight">
-                        {(() => {
-                          switch (selectedCofrinho.frequencia) {
-                            case 'diaria': return 'Diário';
-                            case 'semanal': return 'Semanal';
-                            case 'mensal': return 'Mensal';
-                            default: return '-';
-                          }
-                        })()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between py-2.5 border-b border-border/50">
-                      <span className="text-card-foreground/60 font-medium">Data de Início:</span>
-                      <span className="font-bold text-card-foreground">{selectedCofrinho.data_inicio ? new Date(selectedCofrinho.data_inicio).toLocaleDateString('pt-BR') : '-'}</span>
-                    </div>
-                    <div className="flex justify-between py-2.5">
-                      <span className="text-card-foreground/60 font-medium">Data Final:</span>
-                      <span className="font-bold text-card-foreground">{selectedCofrinho.data_fim ? new Date(selectedCofrinho.data_fim).toLocaleDateString('pt-BR') : '-'}</span>
-                    </div>
-                  </div>
-
-                  <div className="pt-2 grid grid-cols-2 gap-4">
-                    <div className="bg-card-foreground/[0.03] p-4 rounded-2xl border border-border/50 flex flex-col justify-center">
-                      <p className="text-[10px] text-card-foreground/50 uppercase font-black mb-1">DIAS RESTANTES</p>
-                      <p className="text-2xl font-black text-[#ef6037]">{cofrinhoProgress.daysRemaining ?? '0'}</p>
-                    </div>
-                    <div className="bg-card-foreground/[0.03] p-4 rounded-2xl border border-border/50 flex flex-col justify-center">
-                      <p className="text-[10px] text-card-foreground/50 uppercase font-black mb-1">PARCELAS</p>
-                      <p className="text-2xl font-black text-[#ef6037]">{cofrinhoProgress.remainingInstallments}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+                </motion.div>
+              ) : (
+                <motion.div key="slide1" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} transition={{ duration: 0.3 }} className="bg-card rounded-2xl shadow-sm p-6 border border-border min-h-[500px]">
+                  <RenderCofrinhoContent />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+          <div className="flex justify-center gap-3 mt-4">
+            <button onClick={() => setCurrentSlide(0)} className={`w-3 h-3 rounded-full transition-all duration-300 ${currentSlide === 0 ? 'bg-primary scale-125' : 'bg-muted-foreground/30'}`} />
+            <button onClick={() => setCurrentSlide(1)} className={`w-3 h-3 rounded-full transition-all duration-300 ${currentSlide === 1 ? 'bg-primary scale-125' : 'bg-muted-foreground/30'}`} />
           </div>
         </div>
       </div>
-    </div>
+    </CofrinhoDataProvider>
   );
 };
 

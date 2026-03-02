@@ -48,10 +48,10 @@ export const Input: React.FC<InputProps> = ({ id, label, value, onChange, placeh
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          className={`block w-full ${inputPrefix ? 'pl-14' : 'pl-10'} ${showPasswordToggle && type === 'password' ? 'pr-10' : 'pr-4'} py-2 border rounded-lg bg-background text-foreground focus:outline-none sm:text-sm ${error
+          className={`block w-full ${inputPrefix ? 'pl-14' : (icon ? 'pl-10' : (props.className?.includes('text-center') ? 'px-0' : 'px-4'))} ${showPasswordToggle && type === 'password' ? 'pr-10' : (props.className?.includes('text-center') ? 'pr-0' : 'pr-4')} py-2 border rounded-lg bg-background text-foreground focus:outline-none sm:text-sm ${error
             ? 'border-destructive focus:ring-destructive focus:border-destructive'
             : 'border-input focus:ring-ring focus:border-ring'
-            }`}
+            } ${props.className || ''}`}
           step="any"
         />
         {showPasswordToggle && type === 'password' && (

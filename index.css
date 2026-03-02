@@ -220,3 +220,31 @@ body,
   filter: invert(1);
   cursor: pointer;
 }
+
+/* Afasta o ícone nativo do calendário da borda direita */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  margin-right: 20px;
+}
+
+/* Centralizar texto interno de inputs do tipo data */
+input[type="date"].text-center::-webkit-datetime-edit {
+  display: inline-flex !important;
+  justify-content: center !important;
+  width: 100% !important;
+}
+
+input[type="date"].text-center::-webkit-datetime-edit-fields-wrapper {
+  display: flex !important;
+  justify-content: center !important;
+  width: 100% !important;
+}
+
+input[type="date"].text-center {
+  text-align: center !important;
+}
+
+/* Afasta a seta do dropdown select da borda direita */
+select {
+  padding-right: 3rem !important;
+  background-position: right 1.25rem center !important;
+}
