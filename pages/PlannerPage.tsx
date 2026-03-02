@@ -127,6 +127,7 @@ const PlannerPage: React.FC = () => {
   const [term, setTerm] = useState('20');
   const [results, setResults] = useState<ProjectionResult | null>(null);
   const [showResults, setShowResults] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
 
   const [errors, setErrors] = useState({
     goal: '',
@@ -161,36 +162,43 @@ const PlannerPage: React.FC = () => {
       return;
     }
 
+    // Tratando 'goal' como Saldo Inicial (Patrimônio que o usuário já possui)
+    const initialBalance = parseUSDToNumber(goal);
     const P = parseUSDToNumber(contribution);
-    const targetGoal = parseUSDToNumber(goal);
     const annualRate = parseFloat(rate);
     const years = parseInt(term, 10);
 
-    // Cálculo da Taxa Simples Mensal (i)
     const i = (annualRate / 100) / 12;
     const n = years * 12;
 
-    // Formula 1: Valor Futuro (Juros Simples com aportes mensais)
-    const totalInvestedFinal = P * n;
-    const totalInterestFinal = P * i * (n * (n + 1) / 2);
-    const futureValue = totalInvestedFinal + totalInterestFinal;
+    // 1. Rendimento do Saldo Inicial (Juros Simples: J = C * i * n)
+    const interestFromInitial = initialBalance * i * n;
+    const futureInitialBalance = initialBalance + interestFromInitial;
 
-    // Formula 2: Aporte Necessário
-    const requiredContribution = targetGoal / (n + i * (n * (n + 1) / 2));
+    // 2. Rendimento dos Aportes Mensais (Soma de PA para Juros Simples)
+    const totalInvestedContributions = P * n;
+    const interestFromContributions = P * i * (n * (n + 1) / 2);
+
+    // 3. Montante Final Total
+    const futureValue = futureInitialBalance + totalInvestedContributions + interestFromContributions;
 
     const annualData: AnnualData[] = [];
     for (let m = 0; m <= n; m++) {
       if (m === 0 || m % 12 === 0 || m === n) {
-        const totalInvested = P * m;
-        const totalInterest = P * i * (m * (m + 1) / 2);
-        const currentBalance = totalInvested + totalInterest;
+        // Para cada período, calculamos o investido acumulado e os juros proporcionais
+        const currentInvested = initialBalance + (P * m);
+        const currentInterestInitial = initialBalance * i * m;
+        const currentInterestContrib = P * i * (m * (m + 1) / 2);
+
+        const totalInterest = currentInterestInitial + currentInterestContrib;
+        const currentBalance = currentInvested + totalInterest;
         const year = Math.ceil(m / 12);
 
         if (!annualData.find(d => d.year === year)) {
           annualData.push({
             year,
             balance: currentBalance,
-            totalInvested,
+            totalInvested: currentInvested,
             totalInterest,
           });
         }
@@ -199,7 +207,7 @@ const PlannerPage: React.FC = () => {
 
     setResults({
       futureValue,
-      requiredContribution,
+      requiredContribution: 0, // Como agora tratamos como saldo inicial, a meta é o resultado
       annualData,
     });
     setShowResults(true);
@@ -263,7 +271,7 @@ const PlannerPage: React.FC = () => {
         borderWidth: 1,
         padding: 12,
         titleFont: { family: 'Plus Jakarta Sans', size: 12, weight: 'bold' as const },
-        bodyFont: { family: 'Plus Jakarta Sans', size: 14, weight: 'black' as const },
+        bodyFont: { family: 'Plus Jakarta Sans', size: 14, weight: 'bold' as const },
         callbacks: {
           label: (context) => ` $ ${context.parsed.y.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
         }
@@ -329,6 +337,7 @@ const PlannerPage: React.FC = () => {
             <Input
               id="contribution"
               label="Aporte Mensal Dólar USD($)"
+              labelTooltip="Os valores de aporte devem ser inseridos em dólares (USD)"
               labelClassName="text-center"
               className="text-center bg-background/50 font-bold"
               value={contribution}
@@ -397,19 +406,19 @@ const PlannerPage: React.FC = () => {
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="grid grid-cols-1 md:grid-cols-3 gap-6"
+                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
                   >
                     <DashboardCard
                       title="Total Investido"
-                      value={formatCurrency(parseUSDToNumber(contribution) * (parseInt(term, 10) * 12))}
-                      subValue={`Aprox. ${formatCurrency(parseUSDToNumber(contribution) * (parseInt(term, 10) * 12) * BRL_RATE, 'BRL')}`}
-                      description="Valor total aplicado no período"
+                      value={formatCurrency(parseUSDToNumber(contribution) * (parseInt(term, 10) * 12) + parseUSDToNumber(goal))}
+                      subValue={`Aprox. ${formatCurrency((parseUSDToNumber(contribution) * (parseInt(term, 10) * 12) + parseUSDToNumber(goal)) * BRL_RATE, 'BRL')}`}
+                      description="Principal acumulado (Inicial + Aportes)"
                       icon={<Wallet />}
                     />
                     <DashboardCard
                       title="Juros Acumulados"
-                      value={formatCurrency(results.futureValue - (parseUSDToNumber(contribution) * (parseInt(term, 10) * 12)))}
-                      subValue={`+${(((results.futureValue / (parseUSDToNumber(contribution) * (parseInt(term, 10) * 12))) - 1) * 100).toFixed(1)}% de retorno`}
+                      value={formatCurrency(results.futureValue - (parseUSDToNumber(contribution) * (parseInt(term, 10) * 12) + parseUSDToNumber(goal)))}
+                      subValue={`+${(((results.futureValue / (parseUSDToNumber(contribution) * (parseInt(term, 10) * 12) + parseUSDToNumber(goal))) - 1) * 100).toFixed(1)}% de retorno`}
                       description="Rentabilidade simples acumulada"
                       icon={<TrendingUp />}
                       trend="Crescimento estável"
@@ -424,38 +433,123 @@ const PlannerPage: React.FC = () => {
                     />
                   </motion.div>
 
-                  {/* Chart Card */}
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="bg-card rounded-2xl shadow-sm p-6 border border-border"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-                      <div>
-                        <h2 className="text-2xl font-black text-foreground">Acúmulo de Patrimônio</h2>
-                        <p className="text-sm text-muted-foreground">Projeção para os próximos {term} anos baseada em juros simples.</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <div className="flex items-center gap-2 bg-background/50 border border-border px-4 py-2 rounded-xl">
-                          <div className="w-2 h-2 rounded-full bg-primary"></div>
-                          <span className="text-[10px] font-black uppercase text-foreground/70">Projeção Linear</span>
+                  {/* Desktop Implementation (LG and up) - No Carousel to avoid spacing bugs */}
+                  <div className="hidden lg:block space-y-6">
+                    <div className="flex p-1 bg-muted/20 rounded-xl w-fit border border-border backdrop-blur-sm">
+                      <button
+                        onClick={() => setActiveTab(0)}
+                        className={`px-8 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${activeTab === 0 ? 'bg-card text-primary shadow-lg border border-border' : 'text-muted-foreground hover:text-foreground'}`}
+                      >
+                        Gráfico
+                      </button>
+                      <button
+                        onClick={() => setActiveTab(1)}
+                        className={`px-8 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${activeTab === 1 ? 'bg-card text-primary shadow-lg border border-border' : 'text-muted-foreground hover:text-foreground'}`}
+                      >
+                        Tabela
+                      </button>
+                    </div>
+
+                    <AnimatePresence mode="wait">
+                      {activeTab === 0 ? (
+                        <motion.div
+                          key="chart-desktop"
+                          initial={{ opacity: 0, scale: 0.99 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.99 }}
+                          className="bg-card rounded-3xl shadow-xl p-8 border border-border"
+                        >
+                          <div className="flex items-center justify-between mb-8">
+                            <div>
+                              <h2 className="text-2xl font-black text-foreground">Acúmulo de Patrimônio</h2>
+                              <p className="text-sm text-muted-foreground">Projeção visual para os próximos {term} anos.</p>
+                            </div>
+                            <div className="bg-primary/5 border border-primary/10 px-4 py-2 rounded-2xl flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                              <span className="text-[10px] font-black uppercase tracking-tighter text-primary">Crescimento Linear</span>
+                            </div>
+                          </div>
+                          <div className="h-[450px] w-full">
+                            {chartData && <Line data={chartData} options={chartOptions} />}
+                          </div>
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="table-desktop"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 10 }}
+                          className="bg-card rounded-3xl shadow-xl border border-border overflow-hidden"
+                        >
+                          <div className="p-8 border-b border-border bg-muted/5">
+                            <h3 className="text-lg font-black text-foreground">Detalhamento da Evolução</h3>
+                            <p className="text-xs text-muted-foreground mt-1">Confira os valores exatos ano após ano.</p>
+                          </div>
+                          <EvolutionTable data={results.annualData} />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Mobile Implementation (< LG) - Keep Carousel behavior */}
+                  <div className="lg:hidden space-y-6">
+                    <div className="flex p-1 bg-muted/50 rounded-xl w-fit mx-auto border border-border">
+                      <button
+                        onClick={() => setActiveTab(0)}
+                        className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${activeTab === 0 ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                      >
+                        Gráfico
+                      </button>
+                      <button
+                        onClick={() => setActiveTab(1)}
+                        className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${activeTab === 1 ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                      >
+                        Tabela
+                      </button>
+                    </div>
+
+                    <div className="relative overflow-hidden w-full">
+                      <motion.div
+                        className="flex w-full"
+                        animate={{ x: `-${activeTab * 100}%` }}
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      >
+                        {/* Slide 1: Chart */}
+                        <div className="w-full shrink-0 px-1">
+                          <motion.div className="bg-card rounded-2xl shadow-sm p-6 border border-border">
+                            <h2 className="text-xl font-black text-foreground mb-1">Acúmulo de Patrimônio</h2>
+                            <p className="text-xs text-muted-foreground mb-6">Projeção visual para {term} anos.</p>
+                            <div className="h-[350px] w-full">
+                              {chartData && <Line data={chartData} options={chartOptions} />}
+                            </div>
+                          </motion.div>
                         </div>
+
+                        {/* Slide 2: Table */}
+                        <div className="w-full shrink-0 px-1">
+                          <motion.div
+                            onPointerDown={(e) => e.stopPropagation()}
+                            className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden"
+                          >
+                            <div className="p-6 border-b border-border text-center">
+                              <h3 className="text-lg font-black text-foreground">Evolução Anual</h3>
+                            </div>
+                            <EvolutionTable data={results.annualData} />
+                          </motion.div>
+                        </div>
+                      </motion.div>
+
+                      <div className="flex justify-center gap-2 mt-6">
+                        {[0, 1].map((idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setActiveTab(idx)}
+                            className={`h-1.5 rounded-full transition-all duration-300 ${activeTab === idx ? 'w-8 bg-primary' : 'w-2 bg-border'}`}
+                          />
+                        ))}
                       </div>
                     </div>
-
-                    <div className="h-[400px] w-full relative">
-                      {chartData && <Line data={chartData} options={chartOptions} />}
-                    </div>
-                  </motion.div>
-
-                  {/* Detailed Table */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden"
-                  >
-                    <EvolutionTable data={results.annualData} />
-                  </motion.div>
+                  </div>
                 </div>
               )
             )}

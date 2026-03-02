@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, HelpCircle } from 'lucide-react';
 
 interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'prefix'> {
   id: string;
@@ -14,9 +14,10 @@ interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, '
   type?: string;
   showPasswordToggle?: boolean;
   labelClassName?: string;
+  labelTooltip?: string;
 }
 
-export const Input: React.FC<InputProps> = ({ id, label, value, onChange, placeholder, error, helperText, icon, inputPrefix, type = 'text', showPasswordToggle = false, labelClassName = '', ...props }) => {
+export const Input: React.FC<InputProps> = ({ id, label, value, onChange, placeholder, error, helperText, icon, inputPrefix, type = 'text', showPasswordToggle = false, labelClassName = '', labelTooltip, ...props }) => {
   const [showPassword, setShowPassword] = useState(false);
   const effectiveType = useMemo(() => {
     if (showPasswordToggle && type === 'password') {
@@ -26,8 +27,17 @@ export const Input: React.FC<InputProps> = ({ id, label, value, onChange, placeh
   }, [showPasswordToggle, type, showPassword]);
   return (
     <div className="w-full">
-      <label htmlFor={id} className={`block text-sm font-medium text-foreground mb-1 ${labelClassName}`}>
+      <label htmlFor={id} className={`flex items-center justify-center gap-1.5 text-sm font-medium text-foreground mb-1 ${labelClassName}`}>
         {label}
+        {labelTooltip && (
+          <div className="group relative">
+            <HelpCircle className="w-3.5 h-3.5 text-muted-foreground/60 cursor-help hover:text-primary transition-colors" />
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-card border border-border text-[10px] text-foreground rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl z-50 font-bold">
+              {labelTooltip}
+              <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-card" />
+            </div>
+          </div>
+        )}
       </label>
       <div className="relative rounded-md shadow-sm">
         {inputPrefix ? (
