@@ -11,6 +11,7 @@ export const ProfileForm: React.FC = () => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [useFlapStrategy, setUseFlapStrategy] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -22,6 +23,7 @@ export const ProfileForm: React.FC = () => {
       setFullName(full || '');
       setEmail(profile.email || user?.email || '');
       setAvatarUrl(profile.avatar_url);
+      setUseFlapStrategy(profile.use_flap_strategy || false);
     }
   }, [profile, user]);
 
@@ -44,6 +46,7 @@ export const ProfileForm: React.FC = () => {
         .update({
           first_name: first,
           last_name: last,
+          use_flap_strategy: useFlapStrategy,
         })
         .eq('id', user.id);
 
@@ -105,6 +108,22 @@ export const ProfileForm: React.FC = () => {
           type="email"
           helperText={email !== user?.email ? 'Uma verificação será enviada para o novo email.' : undefined}
         />
+
+        <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border border-border">
+          <div>
+            <h4 className="text-sm font-bold text-foreground">Visualização Carteira Antifrágil</h4>
+            <p className="text-xs text-muted-foreground">Ativar visualização da estratégia Antifrágil no dashboard.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setUseFlapStrategy(!useFlapStrategy)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${useFlapStrategy ? 'bg-primary' : 'bg-muted'}`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${useFlapStrategy ? 'translate-x-6' : 'translate-x-1'}`}
+            />
+          </button>
+        </div>
 
         <button
           type="submit"

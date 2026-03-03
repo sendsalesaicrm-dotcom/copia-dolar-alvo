@@ -19,6 +19,7 @@ import CofrinhoPage from './src/pages/CofrinhoPage';
 import AdminPage from './src/pages/AdminPage'; // New import
 import MeuAcessorPage from './src/pages/MeuAcessorPage';
 import SuspendedPage from './src/pages/SuspendedPage';
+import FlapPage from './pages/FlapPage';
 
 const App: React.FC = () => {
   return (
@@ -128,6 +129,16 @@ const App: React.FC = () => {
               <ProtectedRoute>
                 <AppLayout>
                   <MeuAcessorPage />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/flap"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <FlapPage />
                 </AppLayout>
               </ProtectedRoute>
             }

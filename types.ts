@@ -29,6 +29,7 @@ export interface UserProfile {
   // New field for Onboarding
   onboarding_completed: boolean;
   deletion_scheduled_at: string | null;
+  use_flap_strategy: boolean;
 }
 
 export interface FinancialGoal {

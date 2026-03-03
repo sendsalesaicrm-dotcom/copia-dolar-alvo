@@ -5,6 +5,7 @@ import { supabase } from '../src/lib/supabase';
 import { showError } from '../src/utils/toast';
 import { CofrinhoProgressPieChart } from '../src/components/CofrinhoProgressPieChart';
 import { ExchangeRateChart } from '../components/ExchangeRateChart';
+import { FlapQuickView } from '../src/components/FlapQuickView';
 import type { FinancialGoal, MetaTabuleiro, GridValor } from '../types';
 
 interface CurrencyQuote {
@@ -202,7 +203,7 @@ const DashboardPage: React.FC = () => {
     return () => clearInterval(intervalo);
   }, []);
 
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const [goals, setGoals] = useState<FinancialGoal[]>([]);
   const [loadingGoals, setLoadingGoals] = useState(true);
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
@@ -289,8 +290,9 @@ const DashboardPage: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const handleDragEnd = (_: any, info: any) => {
-    if (info.offset.x < -50 && currentSlide < 1) setCurrentSlide(1);
-    else if (info.offset.x > 50 && currentSlide > 0) setCurrentSlide(0);
+    const maxSlide = profile?.use_flap_strategy ? 2 : 1;
+    if (info.offset.x < -50 && currentSlide < maxSlide) setCurrentSlide(prev => prev + 1);
+    else if (info.offset.x > 50 && currentSlide > 0) setCurrentSlide(prev => prev - 1);
   };
 
   const cofrinhoValues = { cofrinhos, selectedCofrinhoId, setSelectedCofrinhoId, selectedCofrinho, cofrinhoProgress };
@@ -307,6 +309,7 @@ const DashboardPage: React.FC = () => {
               <CurrencyCard label="EUR: Euro" quote={cotacoes?.EURBRL} selected={activeCurrency === 'EUR-BRL'} onClick={() => setActiveCurrency('EUR-BRL')} />
               <CurrencyCard label="ETH: Ethereum" quote={cotacoes?.ETHBRL} selected={activeCurrency === 'ETH-BRL'} onClick={() => setActiveCurrency('ETH-BRL')} />
             </div>
+            {profile?.use_flap_strategy && <FlapQuickView />}
           </div>
           <div className="bg-card rounded-2xl shadow-sm p-6 border border-border flex flex-col h-full">
             <RenderCofrinhoContent />
@@ -326,9 +329,13 @@ const DashboardPage: React.FC = () => {
                     <CurrencyCard label="ETH: Ethereum" quote={cotacoes?.ETHBRL} selected={activeCurrency === 'ETH-BRL'} onClick={() => setActiveCurrency('ETH-BRL')} />
                   </div>
                 </motion.div>
-              ) : (
+              ) : currentSlide === 1 ? (
                 <motion.div key="slide1" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} transition={{ duration: 0.3 }} className="bg-card rounded-2xl shadow-sm p-6 border border-border min-h-[500px]">
                   <RenderCofrinhoContent />
+                </motion.div>
+              ) : (
+                <motion.div key="slide2" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} transition={{ duration: 0.3 }} className="min-h-[300px] flex items-center">
+                  <FlapQuickView />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -336,6 +343,9 @@ const DashboardPage: React.FC = () => {
           <div className="flex justify-center gap-3 mt-4">
             <button onClick={() => setCurrentSlide(0)} className={`w-3 h-3 rounded-full transition-all duration-300 ${currentSlide === 0 ? 'bg-primary scale-125' : 'bg-muted-foreground/30'}`} />
             <button onClick={() => setCurrentSlide(1)} className={`w-3 h-3 rounded-full transition-all duration-300 ${currentSlide === 1 ? 'bg-primary scale-125' : 'bg-muted-foreground/30'}`} />
+            {profile?.use_flap_strategy && (
+              <button onClick={() => setCurrentSlide(2)} className={`w-3 h-3 rounded-full transition-all duration-300 ${currentSlide === 2 ? 'bg-primary scale-125' : 'bg-muted-foreground/30'}`} />
+            )}
           </div>
         </div>
       </div>

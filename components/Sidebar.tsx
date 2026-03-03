@@ -1,12 +1,12 @@
 import React from 'react';
 import { NavLink as RouterNavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Settings, Calculator, X, LogOut, Goal, Users, Wallet, PiggyBank, Bot } from 'lucide-react';
+import { LayoutDashboard, Settings, Calculator, X, LogOut, Goal, Users, Wallet, PiggyBank, Bot, Zap } from 'lucide-react';
 import { useAuth } from '../src/context/AuthContext';
 import { showSuccess } from '../src/utils/toast';
 
 interface SidebarProps {
-  isOpen: boolean;
-  setIsOpen: (isOpen: boolean) => void;
+    isOpen: boolean;
+    setIsOpen: (isOpen: boolean) => void;
 }
 
 interface NavLinkProps {
@@ -16,13 +16,12 @@ interface NavLinkProps {
 }
 
 const NavLink: React.FC<NavLinkProps> = ({ to, children, icon }) => (
-    <RouterNavLink 
-        to={to} 
-        className={({ isActive }) => 
-            `flex items-center p-2 text-base font-normal rounded-lg transition-colors ${
-                isActive 
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground font-semibold' 
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent group'
+    <RouterNavLink
+        to={to}
+        className={({ isActive }) =>
+            `flex items-center p-2 text-base font-normal rounded-lg transition-colors ${isActive
+                ? 'bg-sidebar-accent text-sidebar-accent-foreground font-semibold'
+                : 'text-sidebar-foreground hover:bg-sidebar-accent group'
             }`
         }
     >
@@ -47,9 +46,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     return (
         <>
             <aside
-                className={`fixed inset-y-0 left-0 z-40 w-64 bg-sidebar border-r border-sidebar-border transform transition-transform duration-300 ease-in-out ${
-                    isOpen ? 'translate-x-0' : '-translate-x-full'
-                }`}
+                className={`fixed inset-y-0 left-0 z-40 w-64 bg-sidebar border-r border-sidebar-border transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'
+                    }`}
                 aria-label="Sidebar"
             >
                 <div className="h-full px-3 py-4 overflow-y-auto flex flex-col justify-between">
@@ -57,7 +55,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                         <div className="flex items-center justify-between mb-6">
                             <span className="self-center text-xl font-semibold whitespace-nowrap text-sidebar-foreground">Dólar Alvo</span>
                             <button onClick={() => setIsOpen(false)} className="md:hidden text-sidebar-foreground/70 hover:text-sidebar-foreground p-1 rounded-md">
-                            <X className="w-6 h-6" />
+                                <X className="w-6 h-6" />
                             </button>
                         </div>
                         <ul className="space-y-2">
@@ -70,11 +68,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                             {/* <li>
                                 <NavLink to="/goals" icon={<Goal className="w-5 h-5" />}>Metas</NavLink>
                             </li> */}
-                                                        {false && (
-                                                            <li>
-                                                                <NavLink to="/caixinha" icon={<Wallet className="w-5 h-5" />}>Caixinha</NavLink>
-                                                            </li>
-                                                        )}
+                            {false && (
+                                <li>
+                                    <NavLink to="/caixinha" icon={<Wallet className="w-5 h-5" />}>Caixinha</NavLink>
+                                </li>
+                            )}
                             <li>
                                 <NavLink to="/cofrinho" icon={<PiggyBank className="w-5 h-5" />}>Cofrinho</NavLink>
                             </li>
@@ -82,7 +80,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                                 <NavLink to="/meu-acessor" icon={<Bot className="w-5 h-5" />}>Meu Assessor</NavLink>
                             </li>
                             <li>
-                            <NavLink to="/settings" icon={<Settings className="w-5 h-5" />}>Configurações</NavLink>
+                                <NavLink to="/flap" icon={<Zap className="w-5 h-5" />}>Carteira Antifrágil</NavLink>
+                            </li>
+                            <li>
+                                <NavLink to="/settings" icon={<Settings className="w-5 h-5" />}>Configurações</NavLink>
                             </li>
                             {profile?.role === 'admin' && (
                                 <li>
@@ -91,7 +92,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                             )}
                         </ul>
                     </div>
-                    
+
                     {/* Logout Button */}
                     <div className="pt-4 border-t border-sidebar-border">
                         <button
