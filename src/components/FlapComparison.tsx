@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { TrendingUp, Wallet, ArrowUpRight, ShieldCheck } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 import { FlapEvolutionTable } from './FlapEvolutionTable';
 
 interface FlapProps {
@@ -24,6 +25,7 @@ export const FlapComparison: React.FC<FlapProps> = ({
     years,
     cdiAnnual
 }) => {
+    const { theme } = useTheme();
 
     const projection = useMemo(() => {
         const totalMonths = (years || 1) * 12;
@@ -89,60 +91,80 @@ export const FlapComparison: React.FC<FlapProps> = ({
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
     };
 
+    const formatDynamicValue = (value: number) => {
+        const absValue = Math.abs(value);
+        if (absValue >= 1000000000) { // Billions: > 10 digits (roughly)
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+                notation: 'compact',
+                maximumFractionDigits: 1
+            }).format(value);
+        }
+        return formatCurrency(value);
+    };
+
+    const getFontSizeClass = (value: number, defaultSize: string, smallSize: string) => {
+        const absValue = Math.abs(value);
+        return absValue >= 1000000 ? smallSize : defaultSize;
+    };
+
     return (
         <div className="space-y-8">
-            <div className="relative overflow-hidden p-8 bg-[#ef6037] dark:bg-[#1a1a1a] text-white rounded-2xl shadow-xl border border-white/5 group transition-all duration-500">
-                {/* Decorative elements are hidden for a cleaner look as requested, but the background now switches per theme */}
-
+            <div className={`relative overflow-hidden p-8 rounded-[2.5rem] shadow-2xl transition-all duration-500 ${theme === 'dark' ? 'bg-[#1a1a14] border border-white/5' : 'bg-[#ef6037] text-white'}`}>
                 <div className="relative z-10">
-                    <div className="flex items-center justify-between mb-8">
-                        <div className="flex items-center gap-3">
-                            <div className="p-3 bg-white/20 border border-white/40 dark:bg-[#ef6037]/20 dark:border-[#ef6037]/50 rounded-lg">
-                                <TrendingUp className="w-6 h-6 text-white dark:text-[#ef6037]" />
+                    {/* Header: Icon + Title + Pill */}
+                    <div className="flex items-center justify-between mb-12 text-white">
+                        <div className="flex items-center gap-4 text-white">
+                            <div className={`p-2.5 rounded-xl shadow-lg border ${theme === 'dark' ? 'bg-white/10 border-white/20' : 'bg-white/20 border-white/30'}`}>
+                                <TrendingUp className="w-6 h-6 text-white" />
                             </div>
                             <div>
-                                <h3 className="text-2xl font-black tracking-tight">Projeção Antifrágil</h3>
-                                <p className="text-sm text-white/80 dark:text-[#ef6037]/80 font-medium">Estratégia 100% do CDI</p>
+                                <h3 className="text-2xl font-black tracking-tight leading-none text-white">Projeção Antifrágil</h3>
+                                <p className={`text-sm font-medium mt-1 ${theme === 'dark' ? 'text-white/70' : 'text-white/70'}`}>Estratégia 100% do CDI</p>
                             </div>
                         </div>
-                        <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-white/10 border border-white/20 dark:bg-[#ef6037]/10 dark:border-[#ef6037]/30 rounded-full">
-                            <ShieldCheck className="w-4 h-4 text-white dark:text-[#ef6037]" />
-                            <span className="text-xs font-bold text-white dark:text-[#ef6037] uppercase tracking-wider">Seguro e Rentável</span>
+                        <div className={`hidden sm:flex px-6 py-2 backdrop-blur-sm rounded-full border ${theme === 'dark' ? 'bg-white/10 border-white/20' : 'bg-white/20 border-white/10'}`}>
+                            <span className={`text-[10px] font-black uppercase tracking-widest ${theme === 'dark' ? 'text-white' : 'text-white'}`}>Seguro e Rentável</span>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                        <div className="space-y-2">
-                            <p className="text-sm font-semibold uppercase tracking-widest text-white/60">Patrimônio em {years} anos</p>
-                            <div className="flex items-baseline gap-2">
-                                <p className="text-4xl sm:text-5xl font-black text-white leading-none">
-                                    {formatCurrency(projection.finalValue)}
+                    {/* Main Values */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12">
+                        <div className="space-y-3">
+                            <p className={`text-[11px] font-black uppercase tracking-[0.2em] ${theme === 'dark' ? 'text-white/60' : 'text-white/60'}`}>Patrimônio em {years} anos</p>
+                            <div className="flex items-center gap-4">
+                                <p className={`font-black text-white tracking-tighter leading-none transition-all ${getFontSizeClass(projection.finalValue, 'text-5xl sm:text-6xl', 'text-4xl sm:text-5xl')}`}>
+                                    {formatDynamicValue(projection.finalValue)}
                                 </p>
-                                <ArrowUpRight className="w-6 h-6 text-white group-hover:text-green-300 dark:text-green-400 animate-pulse transition-colors" />
+                                <ArrowUpRight className={`w-8 h-8 transition-all transform group-hover:translate-x-1 group-hover:-translate-y-1 ${theme === 'dark' ? 'text-white/40 group-hover:text-white' : 'text-white/40 group-hover:text-white'}`} />
                             </div>
                         </div>
 
-                        <div className="md:text-right space-y-2">
-                            <p className="text-sm font-semibold uppercase tracking-widest text-white/60">Lucro Líquido Real</p>
-                            <p className="text-3xl font-black text-white dark:text-[#ef6037]">
-                                +{formatCurrency(projection.totalProfit)}
-                            </p>
-                            <p className="text-xs font-medium text-white/40 italic">Já descontado 15% de IR sobre o lucro</p>
+                        <div className="md:text-right space-y-3">
+                            <p className={`text-[11px] font-black uppercase tracking-[0.2em] ${theme === 'dark' ? 'text-white/60' : 'text-white/60'}`}>Lucro Líquido Real</p>
+                            <div className="flex flex-col md:items-end">
+                                <p className={`font-black tracking-tight text-white transition-all ${getFontSizeClass(projection.totalProfit, 'text-4xl sm:text-5xl', 'text-3xl sm:text-4xl')}`}>
+                                    +{formatDynamicValue(projection.totalProfit)}
+                                </p>
+                                <p className={`text-[10px] font-bold italic mt-2 ${theme === 'dark' ? 'text-white/40' : 'text-white/50'}`}>Já descontado 15% de IR sobre o lucro</p>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-8 border-t border-white/10">
-                        <div className="flex flex-col gap-1">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">Total Investido</span>
-                            <span className="text-lg font-bold text-white/80">{formatCurrency(projection.totalInvested)}</span>
+                    {/* Footer Info Box */}
+                    <div className={`grid grid-cols-1 sm:grid-cols-3 gap-8 pt-10 border-t ${theme === 'dark' ? 'border-white/5' : 'border-white/20'}`}>
+                        <div className="flex flex-col gap-2">
+                            <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${theme === 'dark' ? 'text-white/60' : 'text-white/60'}`}>Total Investido</span>
+                            <span className="text-xl font-bold text-white">{formatCurrency(projection.totalInvested)}</span>
                         </div>
-                        <div className="flex flex-col gap-1">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">Rentabilidade Total</span>
-                            <span className="text-lg font-bold text-white dark:text-[#ef6037]">{projection.yield.toFixed(2)}%</span>
+                        <div className="flex flex-col gap-2">
+                            <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${theme === 'dark' ? 'text-white/60' : 'text-white/60'}`}>Rentabilidade Total</span>
+                            <span className={`text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-white'}`}>{projection.yield.toFixed(2)}%</span>
                         </div>
-                        <div className="flex flex-col gap-1 sm:items-end">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">Taxa Base (CDI)</span>
-                            <span className="text-lg font-bold text-white dark:text-[#ef6037]">{(cdiAnnual * 100).toFixed(2)}% a.a.</span>
+                        <div className="flex flex-col gap-2 sm:items-end">
+                            <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${theme === 'dark' ? 'text-white/60' : 'text-white/60'}`}>Taxa Base (CDI)</span>
+                            <span className={`text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-white'}`}>{(cdiAnnual * 100).toFixed(2)}% a.a.</span>
                         </div>
                     </div>
                 </div>

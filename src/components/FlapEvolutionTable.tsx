@@ -39,7 +39,7 @@ export const FlapEvolutionTable: React.FC<FlapEvolutionTableProps> = ({ data }) 
                     <p className="text-xs text-muted-foreground mt-1 uppercase font-bold tracking-widest">Evolução da Carteira Antifrágil</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <div className="bg-blue-500/10 text-blue-500 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-tighter border border-blue-500/20">
+                    <div className="bg-[#ef6037]/10 text-[#ef6037] px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-tighter border border-[#ef6037]/20">
                         Página {currentPage} de {totalPages}
                     </div>
                 </div>
@@ -75,7 +75,7 @@ export const FlapEvolutionTable: React.FC<FlapEvolutionTableProps> = ({ data }) 
                                     {formatCurrency(item.grossValue)}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <span className="text-xs font-black text-blue-500 bg-blue-500/10 px-2 py-1 rounded-md">
+                                    <span className="text-xs font-black text-[#ef6037] bg-[#ef6037]/10 px-2 py-1 rounded-md">
                                         {formatPercent(item.accumulatedYield)}
                                     </span>
                                 </td>

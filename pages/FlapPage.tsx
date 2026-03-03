@@ -11,10 +11,12 @@ import {
     Zap,
     ChevronRight
 } from 'lucide-react';
+import { useTheme } from '../src/context/ThemeContext';
 import { FlapComparison } from '../src/components/FlapComparison';
 import { Input } from '../components/Input';
 
 const FlapPage: React.FC = () => {
+    const { theme } = useTheme();
     const [initialInvestment, setInitialInvestment] = useState('180.000,00');
     const [monthlyContribution, setMonthlyContribution] = useState('10.000,00');
     const [years, setYears] = useState('1');
@@ -84,8 +86,8 @@ const FlapPage: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     className="flex flex-col items-center text-center"
                 >
-                    <h1 className="text-4xl md:text-5xl font-black tracking-tight">
-                        <span className="text-primary dark:text-white">Carteira Antifrágil</span>
+                    <h1 className={`text-4xl md:text-5xl font-black tracking-tight ${theme === 'dark' ? 'text-white' : 'text-[#ef6037]'}`}>
+                        Carteira Antifrágil
                     </h1>
                     <p className="text-muted-foreground mt-2 max-w-2xl font-medium mx-auto">
                         Projete o crescimento do seu patrimônio com a nossa estratégia otimizada de CDI.
@@ -101,13 +103,13 @@ const FlapPage: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-card rounded-3xl shadow-xl border border-border p-8"
                 >
-                    <div className="flex items-center gap-3 mb-8">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <TrendingUp className="w-5 h-5 text-primary" />
+                    <div className="flex flex-col items-center justify-center text-center gap-3 mb-10">
+                        <div className="p-3 bg-primary/10 rounded-2xl shadow-sm border border-primary/5">
+                            <TrendingUp className="w-6 h-6 text-primary" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-black text-foreground">Simulador</h2>
-                            <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mt-0.5">Ajuste os valores</p>
+                            <h2 className="text-2xl font-black text-foreground tracking-tight">Simulador</h2>
+                            <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mt-1">Ajuste os valores abaixo</p>
                         </div>
                     </div>
 
@@ -171,7 +173,7 @@ const FlapPage: React.FC = () => {
 
                         <button
                             onClick={handleExplore}
-                            className="w-full md:w-auto h-full px-8 py-4 bg-foreground text-background font-black rounded-2xl flex items-center justify-center gap-2 hover:opacity-90 transition-all group"
+                            className="w-full md:w-auto h-full px-8 py-4 bg-[#ef6037] text-white font-black rounded-2xl flex items-center justify-center gap-2 hover:opacity-90 transition-all group shadow-lg shadow-[#ef6037]/20"
                         >
                             EXPLORAR ESTRATÉGIA
                             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
