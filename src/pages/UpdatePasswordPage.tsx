@@ -8,6 +8,7 @@ import { showSuccess, showError, showLoading, dismissToast } from '../utils/toas
 
 const UpdatePasswordPage: React.FC = () => {
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [sessionChecked, setSessionChecked] = useState(false);
   const navigate = useNavigate();
@@ -15,15 +16,20 @@ const UpdatePasswordPage: React.FC = () => {
   useEffect(() => {
     // Check if the user is redirected here after password reset email click
     supabase.auth.getSession().then(() => {
-        setSessionChecked(true);
+      setSessionChecked(true);
     });
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password.length < 6) {
-        showError('A senha deve ter no mínimo 6 caracteres.');
-        return;
+      showError('A senha deve ter no mínimo 6 caracteres.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      showError('As senhas não coincidem.');
+      return;
     }
 
     setLoading(true);
@@ -59,7 +65,17 @@ const UpdatePasswordPage: React.FC = () => {
           icon={<Lock className="w-5 h-5 text-muted-foreground" />}
           type="password"
         />
-        
+
+        <Input
+          id="confirmPassword"
+          label="Confirmar Senha"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          placeholder="Digite a senha novamente"
+          icon={<Lock className="w-5 h-5 text-muted-foreground" />}
+          type="password"
+        />
+
         <button
           type="submit"
           disabled={loading}
