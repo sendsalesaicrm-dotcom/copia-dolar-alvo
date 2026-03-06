@@ -64,6 +64,7 @@ const UpdatePasswordPage: React.FC = () => {
           placeholder="Mínimo 6 caracteres"
           icon={<Lock className="w-5 h-5 text-muted-foreground" />}
           type="password"
+          showPasswordToggle
         />
 
         <Input
@@ -74,6 +75,7 @@ const UpdatePasswordPage: React.FC = () => {
           placeholder="Digite a senha novamente"
           icon={<Lock className="w-5 h-5 text-muted-foreground" />}
           type="password"
+          showPasswordToggle
         />
 
         <button
