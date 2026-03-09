@@ -8,9 +8,11 @@ const isValidUrl = (url?: string) => !!url && /^https?:\/\//i.test(url);
 let client: any;
 
 if (!isValidUrl(supabaseUrl) || !supabaseAnonKey) {
-  console.error('Supabase not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env.local.');
+  if (import.meta.env.DEV) {
+    console.error('Supabase not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env.local.');
+  }
 
-  type QueryResult<T=any> = { data: T | null; error: { message: string } | null };
+  type QueryResult<T = any> = { data: T | null; error: { message: string } | null };
   const notConfigured = { message: 'Supabase not configured: set env vars.' };
 
   const stub = {
@@ -33,14 +35,14 @@ if (!isValidUrl(supabaseUrl) || !supabaseAnonKey) {
     channel(_name: string) {
       const self = {
         on: (_evt: any, _filter: any, _cb: any) => self,
-        subscribe: () => ({ subscription: { unsubscribe() {} } }),
+        subscribe: () => ({ subscription: { unsubscribe() { } } }),
       };
       return self;
     },
-    removeChannel(_ch: any) {},
+    removeChannel(_ch: any) { },
     auth: {
       async getSession() { return { data: { session: null }, error: null }; },
-      onAuthStateChange(_cb: any) { return { data: { subscription: { unsubscribe() {} } } }; },
+      onAuthStateChange(_cb: any) { return { data: { subscription: { unsubscribe() { } } } }; },
       async signOut() { return { error: null }; },
     },
   } as any;
