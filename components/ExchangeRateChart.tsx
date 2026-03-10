@@ -27,11 +27,13 @@ ChartJS.register(
 interface ExchangeRateChartProps {
   currency?: string;
   setCurrency?: (currency: string) => void;
+  currentQuote?: any;
 }
 
 export const ExchangeRateChart: React.FC<ExchangeRateChartProps> = ({
   currency: externalCurrency,
-  setCurrency: externalSetCurrency
+  setCurrency: externalSetCurrency,
+  currentQuote
 }) => {
   const [chartData, setChartData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -73,13 +75,13 @@ export const ExchangeRateChart: React.FC<ExchangeRateChartProps> = ({
 
           const sortedData = [...data].reverse();
 
-          // Filter for records from TODAY (since midnight)
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
+          // Filter for records from the last 12 hours
+          const twelveHoursAgo = new Date();
+          twelveHoursAgo.setHours(twelveHoursAgo.getHours() - 12);
 
           const filteredData = sortedData.filter((item: any) => {
             const itemDate = new Date(item.timestamp * 1000);
-            return itemDate >= today;
+            return itemDate >= twelveHoursAgo;
           });
 
           // If few data points for today (market just opened or weekend), show last ~100 points
@@ -107,6 +109,25 @@ export const ExchangeRateChart: React.FC<ExchangeRateChartProps> = ({
             return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
           });
           values = sortedData.map((item: any) => parseFloat(item.ask));
+        }
+
+        if (currentQuote && currentQuote.bid && values.length > 0) {
+          let newLabel = '';
+          const now = new Date();
+          if (range === '1d') {
+            newLabel = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+          } else if (range === '1y' || range === '5y') {
+            newLabel = now.toLocaleDateString('pt-BR', { month: '2-digit', year: '2-digit' });
+          } else {
+            newLabel = now.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+          }
+
+          if (labels[labels.length - 1] === newLabel) {
+            values[values.length - 1] = parseFloat(currentQuote.bid);
+          } else {
+            labels.push(newLabel);
+            values.push(parseFloat(currentQuote.bid));
+          }
         }
 
         // Calcular variação
@@ -166,6 +187,8 @@ export const ExchangeRateChart: React.FC<ExchangeRateChartProps> = ({
     };
 
     fetchHistoricalData();
+    const intervalId = setInterval(fetchHistoricalData, 60000);
+    return () => clearInterval(intervalId);
   }, [range, currency]);
 
   const options = {
@@ -190,8 +213,8 @@ export const ExchangeRateChart: React.FC<ExchangeRateChartProps> = ({
             const val = context.parsed.y;
             const isBtc = currency === 'BTC-BRL';
             return ' R$ ' + val.toLocaleString('pt-BR', {
-              minimumFractionDigits: isBtc ? 0 : 3,
-              maximumFractionDigits: isBtc ? 0 : 3
+              minimumFractionDigits: isBtc ? 0 : 2,
+              maximumFractionDigits: isBtc ? 0 : 2
             });
           }
         }

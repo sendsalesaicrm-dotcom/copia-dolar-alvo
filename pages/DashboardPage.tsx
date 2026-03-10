@@ -6,6 +6,7 @@ import { showError } from '../src/utils/toast';
 import { CofrinhoProgressPieChart } from '../src/components/CofrinhoProgressPieChart';
 import { ExchangeRateChart } from '../components/ExchangeRateChart';
 import { FlapQuickView } from '../src/components/FlapQuickView';
+import { DollarSign, ShieldCheck } from 'lucide-react';
 import type { FinancialGoal, MetaTabuleiro, GridValor } from '../types';
 
 interface CurrencyQuote {
@@ -132,12 +133,14 @@ const CurrencyCard = ({
   label,
   quote,
   selected,
-  onClick
+  onClick,
+  updatedAt
 }: {
   label: string,
   quote?: CurrencyQuote,
   selected?: boolean,
-  onClick?: () => void
+  onClick?: () => void,
+  updatedAt?: string
 }) => {
   if (!quote) {
     return (
@@ -172,21 +175,56 @@ const CurrencyCard = ({
           ? 'text-white'
           : (isPositive ? 'text-emerald-500' : 'text-red-500')
           }`}>
-          {isPositive ? '▲' : '▼'} {quote.pctChange}%
+          {isPositive ? '▲' : '▼'} {Math.abs(parseFloat(quote.pctChange)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%
         </p>
       </div>
       <div className="mt-auto pt-2 border-t border-border/10">
         <p className={`text-[9px] font-medium ${selected ? 'text-white/60' : 'text-card-foreground/40'}`}>
-          Atualizado às {quote.create_date.split(' ')[1]}
+          Atualizado às {updatedAt || (quote.create_date ? quote.create_date.split(' ')[1] : '')}
         </p>
       </div>
     </div>
   );
 };
 
+// --- Banner Comercial de Oportunidade ---
+const DollarizationBanner = ({ amount }: { amount: number }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-emerald-600 rounded-2xl p-6 shadow-xl border border-emerald-500/20 text-white relative overflow-hidden"
+    >
+      <div className="absolute top-0 right-0 p-4 opacity-10">
+        <DollarSign className="w-32 h-32" />
+      </div>
+      <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="bg-emerald-500/30 px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest text-emerald-100">
+              Oportunidade
+            </span>
+          </div>
+          <h3 className="text-xl font-black mb-1">Dolarize seus Lucros!</h3>
+          <p className="text-sm text-emerald-100/90 leading-relaxed">
+            Sua estratégia completou o ciclo de 12 meses. Você já possui <strong>USD ${amount.toFixed(2)}</strong> em lucros prontos para serem protegidos em moeda forte.
+          </p>
+        </div>
+        <button
+          onClick={() => window.alert("Redirecionando para consultoria ou fluxo de câmbio...")}
+          className="w-full sm:w-auto px-6 py-3 bg-white text-emerald-700 font-bold rounded-xl shadow border hover:scale-105 transition-transform"
+        >
+          Dolarizar Agora
+        </button>
+      </div>
+    </motion.div>
+  );
+};
+
 const DashboardPage: React.FC = () => {
   const [cotacoes, setCotacoes] = useState<Record<string, CurrencyQuote> | null>(null);
   const [activeCurrency, setActiveCurrency] = useState('USD-BRL');
+  const [lastUpdated, setLastUpdated] = useState<string>('');
 
   useEffect(() => {
     const fetchCotacoes = async () => {
@@ -194,12 +232,13 @@ const DashboardPage: React.FC = () => {
         const response = await fetch('https://economia.awesomeapi.com.br/last/USD-BRL,EUR-BRL,BTC-BRL,ETH-BRL');
         const data = await response.json();
         setCotacoes(data);
+        setLastUpdated(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
       } catch (err) {
         console.error('Erro ao atualizar cotações:', err);
       }
     };
     fetchCotacoes();
-    const intervalo = setInterval(fetchCotacoes, 30000);
+    const intervalo = setInterval(fetchCotacoes, 60000);
     return () => clearInterval(intervalo);
   }, []);
 
@@ -302,14 +341,22 @@ const DashboardPage: React.FC = () => {
       <div className="w-full max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 overflow-hidden">
         <div className="hidden lg:grid lg:grid-cols-[1fr_350px] gap-8 items-stretch">
           <div className="flex flex-col gap-8">
-            <ExchangeRateChart currency={activeCurrency} setCurrency={setActiveCurrency} />
+            <ExchangeRateChart
+              currency={activeCurrency}
+              setCurrency={setActiveCurrency}
+              currentQuote={cotacoes ? cotacoes[activeCurrency.replace('-', '')] : undefined}
+            />
             <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3 sm:gap-4">
-              <CurrencyCard label="USD: Dólar" quote={cotacoes?.USDBRL} selected={activeCurrency === 'USD-BRL'} onClick={() => setActiveCurrency('USD-BRL')} />
-              <CurrencyCard label="BTC: Bitcoin" quote={cotacoes?.BTCBRL} selected={activeCurrency === 'BTC-BRL'} onClick={() => setActiveCurrency('BTC-BRL')} />
-              <CurrencyCard label="EUR: Euro" quote={cotacoes?.EURBRL} selected={activeCurrency === 'EUR-BRL'} onClick={() => setActiveCurrency('EUR-BRL')} />
-              <CurrencyCard label="ETH: Ethereum" quote={cotacoes?.ETHBRL} selected={activeCurrency === 'ETH-BRL'} onClick={() => setActiveCurrency('ETH-BRL')} />
+              <CurrencyCard label="USD: Dólar" quote={cotacoes?.USDBRL} selected={activeCurrency === 'USD-BRL'} onClick={() => setActiveCurrency('USD-BRL')} updatedAt={lastUpdated} />
+              <CurrencyCard label="BTC: Bitcoin" quote={cotacoes?.BTCBRL} selected={activeCurrency === 'BTC-BRL'} onClick={() => setActiveCurrency('BTC-BRL')} updatedAt={lastUpdated} />
+              <CurrencyCard label="EUR: Euro" quote={cotacoes?.EURBRL} selected={activeCurrency === 'EUR-BRL'} onClick={() => setActiveCurrency('EUR-BRL')} updatedAt={lastUpdated} />
+              <CurrencyCard label="ETH: Ethereum" quote={cotacoes?.ETHBRL} selected={activeCurrency === 'ETH-BRL'} onClick={() => setActiveCurrency('ETH-BRL')} updatedAt={lastUpdated} />
             </div>
             {profile?.use_flap_strategy && <FlapQuickView />}
+            {/* Exibição simulada do banner condicional se houver acumulação de lucro na teoria */}
+            {cofrinhoProgress && cofrinhoProgress.totalMarcado > 500 && (
+              <DollarizationBanner amount={cofrinhoProgress.totalMarcado * 0.10} />
+            )}
           </div>
           <div className="bg-card rounded-2xl shadow-sm p-6 border border-border flex flex-col h-full">
             <RenderCofrinhoContent />
@@ -321,12 +368,16 @@ const DashboardPage: React.FC = () => {
             <AnimatePresence mode="wait">
               {currentSlide === 0 ? (
                 <motion.div key="slide0" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} transition={{ duration: 0.3 }} className="flex flex-col gap-8">
-                  <ExchangeRateChart currency={activeCurrency} setCurrency={setActiveCurrency} />
+                  <ExchangeRateChart
+                    currency={activeCurrency}
+                    setCurrency={setActiveCurrency}
+                    currentQuote={cotacoes ? cotacoes[activeCurrency.replace('-', '')] : undefined}
+                  />
                   <div className="grid grid-cols-2 gap-3">
-                    <CurrencyCard label="USD: Dólar" quote={cotacoes?.USDBRL} selected={activeCurrency === 'USD-BRL'} onClick={() => setActiveCurrency('USD-BRL')} />
-                    <CurrencyCard label="BTC: Bitcoin" quote={cotacoes?.BTCBRL} selected={activeCurrency === 'BTC-BRL'} onClick={() => setActiveCurrency('BTC-BRL')} />
-                    <CurrencyCard label="EUR: Euro" quote={cotacoes?.EURBRL} selected={activeCurrency === 'EUR-BRL'} onClick={() => setActiveCurrency('EUR-BRL')} />
-                    <CurrencyCard label="ETH: Ethereum" quote={cotacoes?.ETHBRL} selected={activeCurrency === 'ETH-BRL'} onClick={() => setActiveCurrency('ETH-BRL')} />
+                    <CurrencyCard label="USD: Dólar" quote={cotacoes?.USDBRL} selected={activeCurrency === 'USD-BRL'} onClick={() => setActiveCurrency('USD-BRL')} updatedAt={lastUpdated} />
+                    <CurrencyCard label="BTC: Bitcoin" quote={cotacoes?.BTCBRL} selected={activeCurrency === 'BTC-BRL'} onClick={() => setActiveCurrency('BTC-BRL')} updatedAt={lastUpdated} />
+                    <CurrencyCard label="EUR: Euro" quote={cotacoes?.EURBRL} selected={activeCurrency === 'EUR-BRL'} onClick={() => setActiveCurrency('EUR-BRL')} updatedAt={lastUpdated} />
+                    <CurrencyCard label="ETH: Ethereum" quote={cotacoes?.ETHBRL} selected={activeCurrency === 'ETH-BRL'} onClick={() => setActiveCurrency('ETH-BRL')} updatedAt={lastUpdated} />
                   </div>
                 </motion.div>
               ) : currentSlide === 1 ? (
@@ -336,6 +387,11 @@ const DashboardPage: React.FC = () => {
               ) : (
                 <motion.div key="slide2" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} transition={{ duration: 0.3 }} className="min-h-[300px] flex items-center">
                   <FlapQuickView />
+                  <div className="mt-4">
+                    {cofrinhoProgress && cofrinhoProgress.totalMarcado > 500 && (
+                      <DollarizationBanner amount={cofrinhoProgress.totalMarcado * 0.10} />
+                    )}
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>

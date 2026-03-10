@@ -86,3 +86,31 @@ export interface GridValor {
   posicao: number;
   data_prevista?: string; // YYYY-MM-DD
 }
+
+// Interfaces for Antifragile Portfolio Simulator
+export interface SimulationInputs {
+  initialAmountBrl: number;
+  monthlyContributionBrl: number;
+  annualRateBrl: number;
+  annualRateUsd: number;
+  dollarizationPercentage: number;
+  dollarAppreciationRate: number;
+  currentDollarRate: number;
+  years: number;
+}
+
+export interface AntifragileAnnualData {
+  year: number;
+  balanceBrl: number;
+  balanceUsd: number;
+  extractedForDollarization: number;
+  totalInvestedBrl: number;
+  netProfitBrl: number;
+}
+
+export interface AntifragileProjectionResult {
+  finalPatrimonyBrl: number;
+  finalPatrimonyUsd: number;
+  equivalentTotalBrl: number;
+  annualData: AntifragileAnnualData[];
+}

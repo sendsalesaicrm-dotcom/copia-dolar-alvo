@@ -9,11 +9,17 @@ import {
     ArrowRight,
     ShieldCheck,
     Zap,
-    ChevronRight
+    ChevronRight,
+    DollarSign,
+    Globe,
+    History,
+    X
 } from 'lucide-react';
 import { useTheme } from '../src/context/ThemeContext';
 import { FlapComparison } from '../src/components/FlapComparison';
+import { PurchasingPowerChart } from '../src/components/PurchasingPowerChart';
 import { Input } from '../components/Input';
+import { dollarHistory } from '../src/utils/dollarHistory';
 
 const FlapPage: React.FC = () => {
     const { theme } = useTheme();
@@ -21,14 +27,43 @@ const FlapPage: React.FC = () => {
     const [monthlyContribution, setMonthlyContribution] = useState('10.000,00');
     const [years, setYears] = useState('1');
     const [cdiAnnual, setCdiAnnual] = useState('14.85');
+    const [annualRateUsd, setAnnualRateUsd] = useState('8.00');
+    const [dollarizationPercentage, setDollarizationPercentage] = useState('50');
+    const [dollarAppreciation, setDollarAppreciation] = useState('5.00');
+    const [currentDollar, setCurrentDollar] = useState('5.00');
     const [hasSimulated, setHasSimulated] = useState(false);
+    const [showHistoryModal, setShowHistoryModal] = useState(false);
+
+    React.useEffect(() => {
+        const fetchCotacao = async () => {
+            try {
+                const response = await fetch('https://economia.awesomeapi.com.br/last/USD-BRL');
+                const data = await response.json();
+                if (data && data.USDBRL && data.USDBRL.bid) {
+                    const bid = parseFloat(data.USDBRL.bid);
+                    const formattedBid = bid.toFixed(2);
+                    setCurrentDollar(formattedBid);
+                    setActiveSimulation(prev => ({ ...prev, spotRate: bid }));
+                }
+            } catch (error) {
+                console.error('Erro ao buscar cotação do dólar:', error);
+            }
+        };
+        fetchCotacao();
+        const intervalo = setInterval(fetchCotacao, 60000);
+        return () => clearInterval(intervalo);
+    }, []);
 
     // Estado que controla os valores REAIS da simulação (só muda no clique)
     const [activeSimulation, setActiveSimulation] = useState({
         initial: 180000,
         monthly: 10000,
         years: 1,
-        cdi: 14.85
+        cdi: 14.85,
+        usdRate: 8.00,
+        dollarization: 50,
+        appreciation: 5.00,
+        spotRate: 5.00
     });
 
     const formatToCurrencyNumber = (value: string) => {
@@ -57,23 +92,24 @@ const FlapPage: React.FC = () => {
 
     const handleExplore = () => {
         const yearsNum = parseInt(years);
+        const newSimulation = {
+            initial: parseToNumber(initialInvestment),
+            monthly: parseToNumber(monthlyContribution),
+            years: yearsNum || 1,
+            cdi: parseFloat(cdiAnnual) || 0,
+            usdRate: parseFloat(annualRateUsd) || 0,
+            dollarization: parseFloat(dollarizationPercentage) || 0,
+            appreciation: parseFloat(dollarAppreciation) || 0,
+            spotRate: parseFloat(currentDollar) || 5.00
+        };
+
         if (isNaN(yearsNum) || yearsNum < 1) {
             setYears('1');
-            setActiveSimulation({
-                initial: parseToNumber(initialInvestment),
-                monthly: parseToNumber(monthlyContribution),
-                years: 1,
-                cdi: parseFloat(cdiAnnual) || 0
-            });
+            setActiveSimulation(newSimulation);
             return;
         }
 
-        setActiveSimulation({
-            initial: parseToNumber(initialInvestment),
-            monthly: parseToNumber(monthlyContribution),
-            years: yearsNum,
-            cdi: parseFloat(cdiAnnual) || 0
-        });
+        setActiveSimulation(newSimulation);
         setHasSimulated(true);
     };
 
@@ -150,13 +186,69 @@ const FlapPage: React.FC = () => {
 
                         <Input
                             id="cdi"
-                            label="CDI Anual (%)"
+                            label="Taxa BRL (CDI %)"
                             className="text-lg font-black bg-muted/30 border-none focus:ring-2 focus:ring-primary/20"
                             value={cdiAnnual}
                             onChange={(e) => setCdiAnnual(e.target.value)}
                             icon={<Percent className="w-4 h-4" />}
                             type="number"
-                            placeholder="11.15"
+                            placeholder="14.85"
+                        />
+
+                        <div className="flex flex-col relative">
+                            <Input
+                                id="usdRate"
+                                label="Taxa USD (%)"
+                                className="text-lg font-black bg-muted/30 border-none focus:ring-2 focus:ring-primary/20"
+                                value={annualRateUsd}
+                                onChange={(e) => setAnnualRateUsd(e.target.value)}
+                                icon={<Globe className="w-4 h-4" />}
+                                type="number"
+                                placeholder="8.00"
+                            />
+                            <button
+                                onClick={(e) => { e.preventDefault(); setShowHistoryModal(true); }}
+                                type="button"
+                                className="absolute top-[calc(100%+6px)] left-2 z-10 text-[11px] font-black text-[#ef6037] hover:text-[#d35430] hover:underline transition-all flex items-center gap-1"
+                            >
+                                <History className="w-3.5 h-3.5" />
+                                Ver Histórico (1994)
+                            </button>
+                        </div>
+
+                        <Input
+                            id="dollarization"
+                            label="% Dolarização do Lucro"
+                            className="text-lg font-black bg-muted/30 border-none focus:ring-2 focus:ring-primary/20"
+                            value={dollarizationPercentage}
+                            onChange={(e) => setDollarizationPercentage(e.target.value)}
+                            icon={<ShieldCheck className="w-4 h-4" />}
+                            type="number"
+                            placeholder="50"
+                        />
+
+                        <Input
+                            id="appreciation"
+                            label="Apreciação Dólar a.a (%)"
+                            className="text-lg font-black bg-muted/30 border-none focus:ring-2 focus:ring-primary/20"
+                            value={dollarAppreciation}
+                            onChange={(e) => setDollarAppreciation(e.target.value)}
+                            icon={<TrendingUp className="w-4 h-4" />}
+                            type="number"
+                            placeholder="5.00"
+                        />
+
+                        <Input
+                            id="spotRate"
+                            label="Cotação Dólar Atual (R$)"
+                            className="text-lg font-black bg-muted/50 border-none opacity-70 cursor-not-allowed"
+                            value={currentDollar}
+                            onChange={(e) => setCurrentDollar(e.target.value)}
+                            icon={<DollarSign className="w-4 h-4" />}
+                            type="number"
+                            placeholder="5.00"
+                            readOnly
+                            disabled
                         />
                     </div>
 
@@ -187,16 +279,86 @@ const FlapPage: React.FC = () => {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.1 }}
+                        className="space-y-8"
                     >
                         <FlapComparison
                             initialInvestment={activeSimulation.initial}
                             monthlyContribution={activeSimulation.monthly}
                             years={activeSimulation.years}
                             cdiAnnual={activeSimulation.cdi / 100}
+                            usdRate={activeSimulation.usdRate / 100}
+                            dollarization={activeSimulation.dollarization / 100}
+                            appreciation={activeSimulation.appreciation / 100}
+                            spotRate={activeSimulation.spotRate}
                         />
+
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.3 }}
+                        >
+                            <PurchasingPowerChart />
+                        </motion.div>
                     </motion.div>
                 )}
             </div>
+
+            {/* History Modal */}
+            {showHistoryModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className={`w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col rounded-3xl shadow-2xl ${theme === 'dark' ? 'bg-[#1a1a14] border border-white/10' : 'bg-white'}`}
+                    >
+                        <div className="p-6 border-b border-border flex justify-between items-center">
+                            <div>
+                                <h3 className="text-xl font-black text-foreground">Desvalorização Histórica (Real vs Dólar)</h3>
+                                <p className="text-sm text-muted-foreground mt-1 font-medium">Dados desde a criação do Plano Real em 1994</p>
+                            </div>
+                            <button onClick={() => setShowHistoryModal(false)} className="p-2 hover:bg-muted rounded-full transition-colors">
+                                <X className="w-5 h-5 text-muted-foreground" />
+                            </button>
+                        </div>
+                        <div className={`p-6 overflow-y-auto flex-1 space-y-6 ${theme === 'dark' ? 'custom-scrollbar' : ''}`}>
+                            <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4">
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 bg-primary/10 rounded-xl mt-0.5">
+                                        <History className="w-4 h-4 text-primary" />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-sm font-bold text-foreground mb-1">Por que usamos 8% de projeção?</h4>
+                                        <p className="text-xs text-muted-foreground leading-relaxed">
+                                            Se calcularmos a Taxa de Crescimento Anual Composta (CAGR) real de 1994 a 2026, o crescimento real do dólar foi de aproximadamente <strong className="text-foreground">5,86% ao ano</strong>. A taxa de <strong className="text-primary">8% ao ano</strong> utilizada nas projeções é uma métrica conservadora de mercado (Regra de Bolso), que considera o histórico do <strong>diferencial de inflação</strong> entre o Brasil (IPCA) e os EUA (CPI), para garantir cenários mais robustos no longo prazo.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <table className="w-full text-sm text-left">
+                                <thead className="text-[10px] uppercase font-black text-muted-foreground tracking-wider border-b border-border">
+                                    <tr>
+                                        <th className="pb-3 text-center">Ano</th>
+                                        <th className="pb-3 text-center">Taxa de Câmbio (R$)</th>
+                                        <th className="pb-3 text-center">Variação Anual</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-border">
+                                    {dollarHistory.filter((row: any) => row.ano !== 'Ano').map((row: any, i: number) => (
+                                        <tr key={i} className="hover:bg-muted/30 transition-colors">
+                                            <td className="py-3 font-bold text-foreground text-center">{row.ano}</td>
+                                            <td className="py-3 font-medium text-foreground text-center">R$ {parseFloat(row.cambio).toFixed(2)}</td>
+                                            <td className={`py-3 font-bold text-center ${row.variacao > 0 ? 'text-red-500' : row.variacao < 0 ? 'text-emerald-500' : 'text-muted-foreground'}`}>
+                                                {row.variacao ? (row.variacao * 100).toFixed(2) + '%' : '-'}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
         </div>
     );
 };

@@ -656,11 +656,35 @@ const CofrinhoPage: React.FC = () => {
         ) : (
           <>
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
-              <div className="text-sm">
+              <div className="text-sm flex-1">
                 <div className="text-foreground"><span className="font-medium">tipo de aporte :</span> {formatFrequenciaLabel(selectedMeta?.frequencia as FrequenciaTabuleiro)}</div>
                 <div className="text-foreground"><span className="font-medium">data de início:</span> {formatDate(selectedMeta?.data_inicio)}</div>
                 <div className="text-foreground"><span className="font-medium">data do término:</span> {formatDate(selectedMeta?.data_fim)}</div>
-                <p className="mt-2 text-muted-foreground">Clique nos quadradinhos para marcar.</p>
+
+                {progress && (
+                  <div className="mt-4 p-4 bg-muted/30 rounded-xl border border-border">
+                    <div className="flex justify-between items-end mb-2">
+                      <div>
+                        <p className="text-xs font-black text-muted-foreground uppercase tracking-wider mb-1">Total Guardado (USD)</p>
+                        <p className="text-2xl font-black text-emerald-500">${progress.totalMarcado.toFixed(2)}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Em Reais (Câmbio Simul. 5.10)</p>
+                        <p className="text-sm font-black text-[#ef6037]">R$ {(progress.totalMarcado * 5.10).toFixed(2)}</p>
+                      </div>
+                    </div>
+
+                    <div className="w-full bg-muted rounded-full h-2.5 mb-1 overflow-hidden border border-border">
+                      <div className="bg-emerald-500 h-2.5 rounded-full transition-all duration-1000" style={{ width: `${progress.pct}%` }}></div>
+                    </div>
+                    <div className="flex justify-between text-xs font-bold text-muted-foreground">
+                      <span>{progress.pct.toFixed(1)}% alcançado</span>
+                      <span>Meta: ${progress.objetivo.toFixed(2)}</span>
+                    </div>
+                  </div>
+                )}
+
+                <p className="mt-4 text-xs font-medium text-muted-foreground italic">Clique nos quadradinhos para marcar aportes realizados.</p>
               </div>
               <div className="flex items-end gap-2">
                 <label className="block text-xs text-muted-foreground mb-1">Selecionar Meta</label>
