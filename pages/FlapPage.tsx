@@ -291,14 +291,6 @@ const FlapPage: React.FC = () => {
                             appreciation={activeSimulation.appreciation / 100}
                             spotRate={activeSimulation.spotRate}
                         />
-
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3 }}
-                        >
-                            <PurchasingPowerChart />
-                        </motion.div>
                     </motion.div>
                 )}
             </div>
@@ -309,7 +301,7 @@ const FlapPage: React.FC = () => {
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className={`w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col rounded-3xl shadow-2xl ${theme === 'dark' ? 'bg-[#1a1a14] border border-white/10' : 'bg-white'}`}
+                        className={`w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col rounded-3xl shadow-2xl ${theme === 'dark' ? 'bg-[#1a1a14] border border-white/10' : 'bg-white'}`}
                     >
                         <div className="p-6 border-b border-border flex justify-between items-center">
                             <div>
@@ -321,6 +313,8 @@ const FlapPage: React.FC = () => {
                             </button>
                         </div>
                         <div className={`p-6 overflow-y-auto flex-1 space-y-6 ${theme === 'dark' ? 'custom-scrollbar' : ''}`}>
+                            <PurchasingPowerChart />
+
                             <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4">
                                 <div className="flex items-start gap-3">
                                     <div className="p-2 bg-primary/10 rounded-xl mt-0.5">
