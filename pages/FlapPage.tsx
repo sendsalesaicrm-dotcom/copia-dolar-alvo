@@ -124,7 +124,7 @@ const FlapPage: React.FC = () => {
                     className="bg-card rounded-3xl shadow-xl border border-border p-8"
                 >
                     <div className="flex flex-col items-center justify-center text-center gap-4 mb-10">
-                        <h2 className="text-3xl font-black text-foreground tracking-tight mb-2">Carteira Antifrágil</h2>
+                        <h2 className={`text-3xl font-black tracking-tight mb-2 ${theme === 'dark' ? 'text-white' : 'text-[#ef6037]'}`}>Carteira Antifrágil</h2>
                         <img
                             src="https://blobgpedbfdjweiyxbzu.supabase.co/storage/v1/object/public/imagens/dollar%20dani.jpg"
                             alt="Dólar"
