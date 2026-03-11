@@ -161,20 +161,20 @@ export const PurchasingPowerChart: React.FC = () => {
                         />
                         <Line
                             type="monotone"
-                            dataKey="usdValorization"
-                            stroke="#22c55e"
-                            strokeWidth={3}
-                            dot={{ r: 4, fill: '#22c55e', strokeWidth: 0 }}
-                            activeDot={{ r: 6, fill: '#22c55e', stroke: theme === 'dark' ? '#1a1a1a' : '#fff', strokeWidth: 2 }}
-                            isAnimationActive={true}
-                        />
-                        <Line
-                            type="monotone"
                             dataKey="brlDevaluation"
                             stroke="#ef4444"
                             strokeWidth={3}
                             dot={{ r: 4, fill: '#ef4444', strokeWidth: 0 }}
                             activeDot={{ r: 6, fill: '#ef4444', stroke: theme === 'dark' ? '#1a1a1a' : '#fff', strokeWidth: 2 }}
+                            isAnimationActive={true}
+                        />
+                        <Line
+                            type="monotone"
+                            dataKey="usdValorization"
+                            stroke="#22c55e"
+                            strokeWidth={3}
+                            dot={{ r: 4, fill: '#22c55e', strokeWidth: 0 }}
+                            activeDot={{ r: 6, fill: '#22c55e', stroke: theme === 'dark' ? '#1a1a1a' : '#fff', strokeWidth: 2 }}
                             isAnimationActive={true}
                         />
                     </LineChart>
