@@ -304,10 +304,7 @@ const FlapPage: React.FC = () => {
                         className={`w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col rounded-3xl shadow-2xl ${theme === 'dark' ? 'bg-[#1a1a14] border border-white/10' : 'bg-white'}`}
                     >
                         <div className="p-6 border-b border-border flex justify-between items-center">
-                            <div>
-                                <h3 className="text-xl font-black text-foreground">Desvalorização Histórica (Real vs Dólar)</h3>
-                                <p className="text-sm text-muted-foreground mt-1 font-medium">Dados desde a criação do Plano Real em 1994</p>
-                            </div>
+                            <div className="flex-1"></div>
                             <button onClick={() => setShowHistoryModal(false)} className="p-2 hover:bg-muted rounded-full transition-colors">
                                 <X className="w-5 h-5 text-muted-foreground" />
                             </button>
