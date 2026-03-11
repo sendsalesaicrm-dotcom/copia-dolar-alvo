@@ -115,22 +115,6 @@ const FlapPage: React.FC = () => {
 
     return (
         <div className="w-full max-w-7xl mx-auto px-4 py-8">
-            {/* Header Section */}
-            <div className="mb-12">
-                <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col items-center text-center"
-                >
-                    <h1 className={`text-4xl md:text-5xl font-black tracking-tight ${theme === 'dark' ? 'text-white' : 'text-[#ef6037]'}`}>
-                        Carteira Antifrágil
-                    </h1>
-                    <p className="text-muted-foreground mt-2 max-w-2xl font-medium mx-auto">
-                        Projete o crescimento do seu patrimônio com a nossa estratégia otimizada de CDI.
-                        Simule aportes, prazos e veja o poder do juro composto trabalhando para você.
-                    </p>
-                </motion.div>
-            </div>
 
             <div className="max-w-4xl mx-auto space-y-8">
                 {/* Simulator Controls - Now at the Top */}
