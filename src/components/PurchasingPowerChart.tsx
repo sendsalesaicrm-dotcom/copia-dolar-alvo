@@ -82,18 +82,18 @@ export const PurchasingPowerChart: React.FC = () => {
 
     return (
         <div className={`w-full p-8 rounded-[2.5rem] shadow-xl ${theme === 'dark' ? 'bg-[#1a1a14] border border-white/5' : 'bg-white border border-border'}`}>
-            <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-6 mb-8">
+            <div className="flex flex-col items-center text-center gap-6 mb-8">
                 <div className="flex-1">
                     <h3 className={`text-2xl font-black tracking-tight ${theme === 'dark' ? 'text-white' : 'text-foreground'}`}>
                         Evolução do Dólar vs Perda de Poder de Compra do Real
                     </h3>
-                    <p className="text-sm text-muted-foreground mt-2 max-w-2xl leading-relaxed">
+                    <p className="text-sm text-muted-foreground mt-2 max-w-2xl leading-relaxed mx-auto">
                         A linha verde evidencia a apreciação cumulativa do Dólar frente ao Real desde o início da série histórica em 1994. Em contrapartida, a curva vermelha ilustra a depreciação cambial da moeda brasileira, demonstrando a perda do seu poder aquisitivo internacional em uma trajetória que converge para o limite matemático de desvalorização (-100%).
                     </p>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-4">
-                    <div className="flex items-center gap-4 bg-[#22c55e]/10 p-4 rounded-2xl border border-[#22c55e]/20">
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <div className="flex items-center gap-4 bg-[#22c55e]/10 p-4 rounded-2xl border border-[#22c55e]/20 text-left">
                         <TrendingUp className="w-8 h-8 text-[#22c55e]" />
                         <div>
                             <p className="text-[10px] font-black uppercase tracking-widest text-[#22c55e]/80">
@@ -104,7 +104,7 @@ export const PurchasingPowerChart: React.FC = () => {
                             </p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-4 bg-[#ef4444]/10 p-4 rounded-2xl border border-[#ef4444]/20">
+                    <div className="flex items-center gap-4 bg-[#ef4444]/10 p-4 rounded-2xl border border-[#ef4444]/20 text-left">
                         <TrendingDown className="w-8 h-8 text-[#ef4444]" />
                         <div>
                             <p className="text-[10px] font-black uppercase tracking-widest text-[#ef4444]/80">
