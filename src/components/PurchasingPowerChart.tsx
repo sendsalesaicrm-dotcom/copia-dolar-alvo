@@ -156,7 +156,7 @@ export const PurchasingPowerChart: React.FC = () => {
                         <Legend
                             wrapperStyle={{ paddingTop: '20px' }}
                             formatter={(value) => {
-                                return <span className="text-xs font-bold uppercase tracking-wider ml-1">{value === 'usdValorization' ? 'Valorização do Dólar (+%)' : 'Desvalorização do Real (-%)'}</span>
+                                return <span className="text-xs font-bold uppercase tracking-wider ml-1">{value === 'usdValorization' ? 'Dólar (USD)' : 'Real (BRL)'}</span>
                             }}
                         />
                         <Line
