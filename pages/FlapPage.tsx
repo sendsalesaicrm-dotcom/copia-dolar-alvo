@@ -124,17 +124,15 @@ const FlapPage: React.FC = () => {
                     className="bg-card rounded-3xl shadow-xl border border-border p-8"
                 >
                     <div className="flex flex-col items-center justify-center text-center gap-4 mb-10">
+                        <h2 className="text-3xl font-black text-foreground tracking-tight mb-2">Carteira Antifrágil</h2>
                         <img
                             src="https://blobgpedbfdjweiyxbzu.supabase.co/storage/v1/object/public/imagens/dollar%20dani.jpg"
                             alt="Dólar"
-                            className="w-20 h-20 rounded-2xl object-cover shadow-lg border border-primary/20 ring-4 ring-primary/5"
+                            className="w-full max-w-sm rounded-2xl shadow-lg border border-primary/20 ring-4 ring-primary/5"
                         />
-                        <div>
-                            <h2 className="text-3xl font-black text-foreground tracking-tight">Carteira Antifrágil</h2>
-                            <p className="text-sm text-muted-foreground mt-3 max-w-lg mx-auto leading-relaxed">
-                                Projete o crescimento do seu patrimônio com a nossa estratégia otimizada de CDI. Simule aportes, prazos e veja o poder do juro composto trabalhando para você.
-                            </p>
-                        </div>
+                        <p className="text-sm text-muted-foreground mt-4 max-w-lg mx-auto leading-relaxed">
+                            Projete o crescimento do seu patrimônio com a nossa estratégia otimizada de CDI. Simule aportes, prazos e veja o poder do juro composto trabalhando para você.
+                        </p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
