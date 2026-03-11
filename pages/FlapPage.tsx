@@ -139,13 +139,17 @@ const FlapPage: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-card rounded-3xl shadow-xl border border-border p-8"
                 >
-                    <div className="flex flex-col items-center justify-center text-center gap-3 mb-10">
-                        <div className="p-3 bg-primary/10 rounded-2xl shadow-sm border border-primary/5">
-                            <TrendingUp className="w-6 h-6 text-primary" />
-                        </div>
+                    <div className="flex flex-col items-center justify-center text-center gap-4 mb-10">
+                        <img
+                            src="https://blobgpedbfdjweiyxbzu.supabase.co/storage/v1/object/public/imagens/dollar%20dani.jpg"
+                            alt="Dólar"
+                            className="w-20 h-20 rounded-2xl object-cover shadow-lg border border-primary/20 ring-4 ring-primary/5"
+                        />
                         <div>
-                            <h2 className="text-2xl font-black text-foreground tracking-tight">Simulador</h2>
-                            <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mt-1">Ajuste os valores abaixo</p>
+                            <h2 className="text-3xl font-black text-foreground tracking-tight">Carteira Antifrágil</h2>
+                            <p className="text-sm text-muted-foreground mt-3 max-w-lg mx-auto leading-relaxed">
+                                Projete o crescimento do seu patrimônio com a nossa estratégia otimizada de CDI. Simule aportes, prazos e veja o poder do juro composto trabalhando para você.
+                            </p>
                         </div>
                     </div>
 
