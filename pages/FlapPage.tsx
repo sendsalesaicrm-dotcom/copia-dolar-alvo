@@ -158,28 +158,33 @@ const FlapPage: React.FC = () => {
                             placeholder="0,00"
                         />
 
-                        <Input
-                            id="years"
-                            label="Anos"
-                            className="text-lg font-black bg-muted/30 border-none focus:ring-2 focus:ring-primary/20"
-                            value={years}
-                            onChange={(e) => setYears(e.target.value)}
-                            icon={<Calendar className="w-4 h-4" />}
-                            type="number"
-                            placeholder="1"
-                            min="1"
-                        />
-
-                        <Input
-                            id="cdi"
-                            label="Taxa BRL (CDI %)"
-                            className="text-lg font-black bg-muted/30 border-none focus:ring-2 focus:ring-primary/20"
-                            value={cdiAnnual}
-                            onChange={(e) => setCdiAnnual(e.target.value)}
-                            icon={<Percent className="w-4 h-4" />}
-                            type="number"
-                            placeholder="14.85"
-                        />
+                        <div className="col-span-1 md:col-span-2 lg:col-span-2 grid grid-cols-3 gap-6">
+                            <div className="col-span-1">
+                                <Input
+                                    id="years"
+                                    label="Anos"
+                                    className="text-lg font-black bg-muted/30 border-none focus:ring-2 focus:ring-primary/20"
+                                    value={years}
+                                    onChange={(e) => setYears(e.target.value)}
+                                    icon={<Calendar className="w-4 h-4" />}
+                                    type="number"
+                                    placeholder="1"
+                                    min="1"
+                                />
+                            </div>
+                            <div className="col-span-2">
+                                <Input
+                                    id="cdi"
+                                    label="Taxa BRL (CDI %)"
+                                    className="text-lg font-black bg-muted/30 border-none focus:ring-2 focus:ring-primary/20"
+                                    value={cdiAnnual}
+                                    onChange={(e) => setCdiAnnual(e.target.value)}
+                                    icon={<Percent className="w-4 h-4" />}
+                                    type="number"
+                                    placeholder="14.85"
+                                />
+                            </div>
+                        </div>
 
                         <div className="flex flex-col relative">
                             <Input
