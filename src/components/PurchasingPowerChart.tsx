@@ -88,7 +88,7 @@ export const PurchasingPowerChart: React.FC = () => {
                         Evolução do Dólar vs Perda de Poder de Compra do Real
                     </h3>
                     <p className="text-sm text-muted-foreground mt-2 max-w-2xl leading-relaxed">
-                        A linha verde mostra a valorização histórica do Dólar frente ao Real a partir do zero. A linha vermelha ilustra como o <strong>Poder de Compra</strong> da nossa moeda derrete rumo ao assoalho negativo (limitado a -100%) desde 1994.
+                        A linha verde evidencia a apreciação cumulativa do Dólar frente ao Real desde o início da série histórica em 1994. Em contrapartida, a curva vermelha ilustra a depreciação cambial da moeda brasileira, demonstrando a perda do seu poder aquisitivo internacional em uma trajetória que converge para o limite matemático de desvalorização (-100%).
                     </p>
                 </div>
 
