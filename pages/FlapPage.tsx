@@ -329,12 +329,12 @@ const FlapPage: React.FC = () => {
                                 </div>
                             </div>
 
-                            <table className="w-full text-sm text-left">
+                            <table className="w-full text-sm text-center">
                                 <thead className="text-[10px] uppercase font-black text-muted-foreground tracking-wider border-b border-border">
                                     <tr>
-                                        <th className="pb-3 text-center">Ano</th>
-                                        <th className="pb-3 text-center">Taxa de Câmbio (R$)</th>
-                                        <th className="pb-3 text-center">Variação Anual</th>
+                                        <th className="pb-3 px-4 text-center">Ano</th>
+                                        <th className="pb-3 px-4 text-center">Taxa de Câmbio (R$)</th>
+                                        <th className="pb-3 px-4 text-center">Variação Anual</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border">
