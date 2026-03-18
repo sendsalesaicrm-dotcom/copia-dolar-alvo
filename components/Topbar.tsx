@@ -1,7 +1,8 @@
 import React from 'react';
 import { Menu, Bot } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
-import UserMenu from '../src/components/UserMenu'; // Import UserMenu
+import UserMenu from '../src/components/UserMenu';
+import { NewsNotification } from '../src/components/NewsNotification';
 
 interface TopbarProps {
   onToggleSidebar: () => void;
@@ -32,8 +33,9 @@ export const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
           </div>
         )}
 
-        {/* Right corner: User Menu Dropdown */}
-        <div className="flex items-center space-x-4">
+        {/* Right corner: Notifications and User Menu Dropdown */}
+        <div className="flex items-center space-x-2 sm:space-x-4">
+          <NewsNotification />
           <UserMenu />
         </div>
       </div>
