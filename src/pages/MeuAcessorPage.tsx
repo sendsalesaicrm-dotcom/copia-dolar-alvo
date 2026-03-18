@@ -378,9 +378,27 @@ const MeuAcessorPage: React.FC = () => {
     // Excluir no Supabase (melhor-esforço)
     try {
       if (user?.id) {
-        supabase.from('all_chat').delete().eq('id_chat', id).eq('user_id', user.id);
+        supabase
+          .from('all_chat')
+          .delete()
+          .eq('id_chat', id)
+          .eq('user_id', user.id)
+          .then(({ error }) => {
+             if (error) console.error('Erro ao excluir all_chat:', error);
+          });
+          
+        supabase
+          .from('chat_registros')
+          .delete()
+          .eq('id', id)
+          .eq('user_id', user.id)
+          .then(({ error }) => {
+             if (error) console.error('Erro ao excluir chat_registros:', error);
+          });
       }
-    } catch {}
+    } catch (e) {
+      console.error('Erro persistência exclusão:', e);
+    }
   };
 
   const renameConversation = (id: string) => {
@@ -401,9 +419,21 @@ const MeuAcessorPage: React.FC = () => {
             .from('all_chat')
             .update({ name: newTitle.trim(), updated_at: new Date().toISOString() })
             .eq('id_chat', id)
-            .eq('user_id', user.id);
+            .eq('user_id', user.id)
+            .then(({ error }) => {
+              if (error) console.error('Erro ao renomear all_chat:', error);
+            });
+            
+          supabase
+            .from('chat_registros')
+            .update({ title: newTitle.trim(), updated_at: new Date().toISOString() })
+            .eq('id', id)
+            .eq('user_id', user.id)
+            .then();
         }
-      } catch {}
+      } catch (e) {
+        console.error('Erro renomear:', e);
+      }
       return updated;
     });
     setMenuOpenFor(null);
