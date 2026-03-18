@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Send, MoreVertical, Share2, Pencil, Pin, Archive, ChevronRight, Trash } from 'lucide-react';
+import { Send, Mic, MoreVertical, Share2, Pencil, Pin, Archive, ChevronRight, Trash } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 
@@ -14,6 +14,24 @@ const formatTime = (ms: number): string => {
   const hh = String(d.getHours()).padStart(2, '0');
   const mm = String(d.getMinutes()).padStart(2, '0');
   return `${hh}:${mm}`;
+};
+
+const formatRelativeTime = (ms: number): string => {
+  const diffMs = Date.now() - ms;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  const diffWeeks = Math.floor(diffDays / 7);
+  const diffMonths = Math.floor(diffDays / 30);
+  const diffYears = Math.floor(diffDays / 365);
+
+  if (diffMins < 1) return 'agora';
+  if (diffMins < 60) return `há ${diffMins} minuto${diffMins > 1 ? 's' : ''}`;
+  if (diffHours < 24) return `há ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
+  if (diffDays < 7) return `há ${diffDays} dia${diffDays > 1 ? 's' : ''}`;
+  if (diffDays < 30) return `há ${diffWeeks} semana${diffWeeks > 1 ? 's' : ''}`;
+  if (diffDays < 365) return `há ${diffMonths === 1 ? '1 mês' : `${diffMonths} meses`}`;
+  return `há ${diffYears} ano${diffYears > 1 ? 's' : ''}`;
 };
 
 const suggestReply = (input: string): string => {
@@ -50,6 +68,60 @@ const MeuAcessorPage: React.FC = () => {
   const phraseIntervalRef = useRef<number | null>(null);
   const dotsIntervalRef = useRef<number | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  // --- Voice Input (Speech-to-Text) ---
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const speechSupported = typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+
+  const toggleListening = () => {
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'pt-BR';
+    recognition.interimResults = true;
+    recognition.continuous = false;
+    recognition.maxAlternatives = 1;
+
+    let finalTranscript = '';
+
+    recognition.onresult = (event: any) => {
+      let interim = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript;
+        } else {
+          interim += transcript;
+        }
+      }
+      setInput(finalTranscript + interim);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
+
+    recognition.onerror = (event: any) => {
+      if (event.error !== 'no-speech' && event.error !== 'aborted') {
+        console.error('Speech recognition error:', event.error);
+      }
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
+  };
 
   // Read webhook URL from env. Vite only exposes VITE_* by default.
   const webhookUrl = (import.meta as any).env?.VITE_WEBWEBHOOK_URL_N8N || (import.meta as any).env?.WEBWEBHOOK_URL_N8N;
@@ -198,7 +270,67 @@ const MeuAcessorPage: React.FC = () => {
       }
 
       // 3) If authenticated, merge Supabase conversations
-      // (Removido: leitura de chat_registros)
+      if (user?.id) {
+        try {
+          const { data, error } = await supabase
+            .from('all_chat')
+            .select('*')
+            .eq('user_id', user.id);
+            
+          if (!error && data) {
+            const mappedSupabase: Conversation[] = data.map((row: any) => ({
+              id: row.id_chat,
+              title: row.name || 'Conversa',
+              messages: Array.isArray(row.content) ? row.content : [],
+              lastUpdated: new Date(row.updated_at).getTime() || Date.now()
+            }));
+
+            setConversations((prev) => {
+              const mergedMap = new Map<string, Conversation>();
+              prev.forEach(c => mergedMap.set(c.id, c));
+              
+              mappedSupabase.forEach(sc => {
+                const existing = mergedMap.get(sc.id);
+                if (!existing || sc.lastUpdated >= existing.lastUpdated) {
+                  mergedMap.set(sc.id, sc);
+                } else if (existing && existing.lastUpdated > sc.lastUpdated) {
+                  // Sync local to supabase if local is newer
+                  supabase.from('all_chat').upsert({
+                    id_chat: existing.id,
+                    user_id: user.id,
+                    name: existing.title,
+                    content: existing.messages,
+                    updated_at: new Date(existing.lastUpdated).toISOString()
+                  }).then();
+                }
+              });
+
+              // Sync local to supabase if not present
+              prev.forEach(lc => {
+                const inSupa = mappedSupabase.find(s => s.id === lc.id);
+                if (!inSupa) {
+                  supabase.from('all_chat').upsert({
+                    id_chat: lc.id,
+                    user_id: user.id,
+                    name: lc.title,
+                    content: lc.messages,
+                    updated_at: new Date(lc.lastUpdated).toISOString()
+                  }).then();
+                }
+              });
+
+              const finalList = Array.from(mergedMap.values())
+               .filter(c => Array.isArray(c.messages) && c.messages.length > 0)
+               .sort((a, b) => b.lastUpdated - a.lastUpdated);
+               
+              saveConversations(finalList);
+              return finalList;
+            });
+          }
+        } catch (err) {
+          console.error('Error fetching chat history from Supabase:', err);
+        }
+      }
     };
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -388,14 +520,18 @@ const MeuAcessorPage: React.FC = () => {
         try {
           const active = updated.find((c) => c.id === activeId);
           if (active && user?.id) {
+            const lastUserMsg = active.messages.filter(m => m.role === 'user').pop()?.text || '';
+            const lastAssistantMsg = active.messages.filter(m => m.role === 'assistant').pop()?.text || '';
+            
             supabase
               .from('chat_registros')
               .upsert({
                 id: active.id,
                 user_id: user.id,
-                title: active.title,
-                messages: active.messages,
-                updated_at: new Date().toISOString(),
+                output: lastAssistantMsg,
+                last_input: lastUserMsg,
+                history: active.messages,
+                created_at: new Date().toISOString(),
               })
               .then(({ error }) => { if (error) console.error('Erro chat_registros:', error); });
             // Mirror into all_chat table
@@ -451,11 +587,11 @@ const MeuAcessorPage: React.FC = () => {
                     className={`relative flex items-center justify-between border-b border-border ${c.id === currentConversationId ? 'bg-sidebar-accent text-sidebar-accent-foreground font-semibold' : 'hover:bg-muted'}`}
                   >
                     <button
-                      className="flex-1 text-left px-3 py-2 text-sm"
+                      className="flex-1 text-left px-3 py-2 text-sm overflow-hidden"
                       onClick={() => selectConversation(c.id)}
                     >
                       <div className="truncate">{c.title}</div>
-                      <div className="text-xs opacity-70">{formatTime(c.lastUpdated)}</div>
+                      <div className="text-xs opacity-70 mt-0.5">{formatRelativeTime(c.lastUpdated)}</div>
                     </button>
                     <button
                       className="p-2 text-muted-foreground hover:text-foreground"
@@ -464,7 +600,17 @@ const MeuAcessorPage: React.FC = () => {
                         const btn = e.currentTarget as HTMLButtonElement;
                         const rect = btn.getBoundingClientRect();
                         setMenuOpenFor(menuOpenFor === c.id ? null : c.id);
-                        setMenuCoords({ top: rect.top + rect.height / 2, left: rect.right + 8 });
+                        
+                        // Menu tem aprox 260px de altura (130px metade)
+                        // Aumentando a margem de segurança para 180px para evitar cortes no rodapé
+                        let adjustedTop = rect.top + rect.height / 2;
+                        if (adjustedTop + 180 > window.innerHeight) {
+                          adjustedTop = window.innerHeight - 180; 
+                        } else if (adjustedTop - 180 < 0) {
+                          adjustedTop = 180;
+                        }
+
+                        setMenuCoords({ top: adjustedTop, left: rect.right + 8 });
                         setMenuAnchorEl(btn);
                       }}
                       aria-label="Mais opções"
@@ -477,7 +623,7 @@ const MeuAcessorPage: React.FC = () => {
                         {/* backdrop to close on outside click */}
                         <div className="fixed inset-0 z-40" onClick={() => setMenuOpenFor(null)} />
                         <div
-                          className="fixed z-50 bg-card border border-border rounded-xl shadow-lg min-w-[220px] py-2"
+                          className="fixed z-50 bg-card text-foreground border border-border rounded-xl shadow-lg min-w-[220px] py-2"
                           style={{ top: menuCoords.top, left: menuCoords.left, transform: 'translateY(-50%)' }}
                         >
                           <button
@@ -576,13 +722,25 @@ const MeuAcessorPage: React.FC = () => {
               <div className="flex items-center gap-2">
                 <input
                   type="text"
-                  placeholder="Digite sua mensagem..."
+                  placeholder={isListening ? 'Ouvindo...' : 'Digite sua mensagem...'}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={onKeyDown}
-                  className="flex-1 px-3 py-2 rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  className={`flex-1 px-3 py-2 rounded-lg border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${isListening ? 'border-red-400 ring-2 ring-red-400/30' : 'border-input'}`}
                   disabled={sending}
                 />
+                {speechSupported && (
+                  <button
+                    type="button"
+                    onClick={toggleListening}
+                    disabled={sending}
+                    className={`inline-flex items-center justify-center w-10 h-10 rounded-lg transition-all ${isListening ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/30' : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'} disabled:opacity-60 disabled:cursor-not-allowed`}
+                    aria-label={isListening ? 'Parar gravação' : 'Gravar áudio'}
+                    title={isListening ? 'Parar gravação' : 'Enviar por voz'}
+                  >
+                    <Mic className="w-4 h-4" />
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={handleSend}

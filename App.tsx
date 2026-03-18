@@ -20,6 +20,7 @@ import AdminPage from './src/pages/AdminPage'; // New import
 import MeuAcessorPage from './src/pages/MeuAcessorPage';
 import SuspendedPage from './src/pages/SuspendedPage';
 import FlapPage from './pages/FlapPage';
+import GastosPage from './src/pages/GastosPage';
 
 const App: React.FC = () => {
   return (
@@ -139,6 +140,16 @@ const App: React.FC = () => {
               <ProtectedRoute>
                 <AppLayout>
                   <FlapPage />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/gastos"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <GastosPage />
                 </AppLayout>
               </ProtectedRoute>
             }

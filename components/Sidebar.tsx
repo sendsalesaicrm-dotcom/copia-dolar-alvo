@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink as RouterNavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Settings, Calculator, X, LogOut, Goal, Users, Wallet, PiggyBank, Bot, Zap } from 'lucide-react';
+import { LayoutDashboard, Settings, Calculator, X, LogOut, Goal, Users, Wallet, PiggyBank, Bot, Zap, Receipt } from 'lucide-react';
 import { useAuth } from '../src/context/AuthContext';
 import { showSuccess } from '../src/utils/toast';
 
@@ -80,7 +80,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                                 <NavLink to="/meu-acessor" icon={<Bot className="w-5 h-5" />}>Meu Assessor</NavLink>
                             </li>
                             <li>
-                                <NavLink to="/flap" icon={<Zap className="w-5 h-5" />}>Carteira Antifrágil</NavLink>
+                            <NavLink to="/flap" icon={<Zap className="w-5 h-5" />}>Carteira Antifrágil</NavLink>
+                            </li>
+                            <li>
+                                <NavLink to="/gastos" icon={<Receipt className="w-5 h-5" />}>Meus Gastos</NavLink>
                             </li>
                             <li>
                                 <NavLink to="/settings" icon={<Settings className="w-5 h-5" />}>Configurações</NavLink>
