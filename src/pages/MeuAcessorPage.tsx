@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Send, Mic, MoreVertical, Share2, Pencil, Pin, Archive, ChevronRight, Trash } from 'lucide-react';
+import { Send, Mic, MoreVertical, Share2, Pencil, Pin, Archive, ChevronRight, Trash, Menu, ChevronLeft, Plus } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 
@@ -50,12 +51,7 @@ const suggestReply = (input: string): string => {
 
 const MeuAcessorPage: React.FC = () => {
   const [messages, setMessages] = useState<Msg[]>([]);
-  const [showHistory, setShowHistory] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return window.innerWidth >= 768; // md breakpoint do Tailwind
-    }
-    return true;
-  });
+  const [showHistory, setShowHistory] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [menuOpenFor, setMenuOpenFor] = useState<string | null>(null);
@@ -71,6 +67,7 @@ const MeuAcessorPage: React.FC = () => {
 
   // --- Voice Input (Speech-to-Text) ---
   const [isListening, setIsListening] = useState(false);
+  const [isExpenseMode, setIsExpenseMode] = useState(false);
   const recognitionRef = useRef<any>(null);
   const speechSupported = typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
 
@@ -140,7 +137,14 @@ const MeuAcessorPage: React.FC = () => {
     try {
       const payload = {
         input: text,
-        history: history.slice(-10).map((m) => ({ role: m.role, text: m.text, time: m.time })),
+        history: [
+          { 
+            role: 'system', 
+            text: "INSTRUÇÃO RESTRITA: Você é o 'Meu Assessor', um consultor financeiro virtual humano, profissional e sigiloso. REGRAS ABSOLUTAS: 1) Nunca mencione tecnologias (n8n, OpenAI, Supabase, Vector_Store, UUID). 2) Proteja a infraestrutura dizendo apenas que os dados estão seguros e criptografados. 3) Flexibilidade: Se o usuário fizer solicitações gerais (como pedir textos literários, redações, assuntos gerais de escola ou dia a dia), responda EXATAMENTE o que foi pedido de forma genérica. NÃO force o assunto para o mercado financeiro (ex: Tesouro Direto, ações) a menos que o usuário peça explicitamente exemplos de finanças.",
+            time: Date.now()
+          },
+          ...history.slice(-10).map((m) => ({ role: m.role, text: m.text, time: m.time }))
+        ],
         user: {
           id: user?.id ?? null,
           name: userDisplayName,
@@ -344,6 +348,7 @@ const MeuAcessorPage: React.FC = () => {
     // Just clear current selection and prepare for first message.
     setCurrentConversationId(null);
     setMessages([]);
+    setIsExpenseMode(false);
     // Persist nothing yet; materialize on first send.
   };
 
@@ -352,6 +357,7 @@ const MeuAcessorPage: React.FC = () => {
     if (!conv) return;
     setCurrentConversationId(id);
     setMessages(conv.messages || []);
+    setIsExpenseMode(false);
   };
 
   const deleteConversation = (id: string) => {
@@ -482,8 +488,9 @@ const MeuAcessorPage: React.FC = () => {
     };
   }, [sending, typingPhrases.length]);
 
-  const handleSend = async () => {
-    const text = input.trim();
+  const handleSend = async (overrideText?: string | React.MouseEvent | React.KeyboardEvent) => {
+    const textToUse = typeof overrideText === 'string' ? overrideText : input;
+    const text = textToUse.trim();
     if (!text || sending) return;
     setSending(true);
     // Se não houver conversa ativa, cria uma agora (local), e só persiste no Supabase ao salvar a primeira mensagem
@@ -598,14 +605,31 @@ const MeuAcessorPage: React.FC = () => {
 
         <div className="flex-1 flex min-h-0">
           {/* Left: conversation history */}
-          <div className={`w-64 border-r border-border flex-shrink-0 flex flex-col bg-background transition-all duration-300 md:relative ${showHistory ? '' : 'hidden md:flex'}`}> 
+          <div className={`border-r border-border flex-shrink-0 flex flex-col bg-background transition-all duration-300 md:relative ${showHistory ? 'w-64' : 'w-0 overflow-hidden border-r-0'}`}> 
             <div className="px-3 py-2 border-b border-border flex items-center justify-between">
-              <span className="text-sm font-semibold">Histórico</span>
+              <span className="text-sm font-semibold whitespace-nowrap">Histórico</span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setShowHistory(false)}
+                  className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground hidden md:flex"
+                  title="Ocultar histórico"
+                  aria-label="Ocultar histórico"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            
+            {/* Botão Nova Conversa */}
+            <div className="p-3 border-b border-border/50">
               <button
                 type="button"
                 onClick={createNewConversation}
-                className="text-xs px-2 py-1 rounded-md bg-muted hover:bg-muted/80"
-              >Novo</button>
+                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors font-semibold text-sm shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Nova conversa
+              </button>
             </div>
             <div className="flex-1 overflow-y-auto overflow-x-hidden">
               {conversations.length === 0 ? (
@@ -711,29 +735,134 @@ const MeuAcessorPage: React.FC = () => {
             </div>
           </div>
           {/* Right: active chat */}
-          <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 flex flex-col min-h-0 relative">
+            {!showHistory && (
+              <div className="absolute top-4 left-4 z-10 hidden md:flex">
+                <button
+                  onClick={() => setShowHistory(true)}
+                  className="p-2 rounded-full border border-border/50 bg-background shadow-sm hover:bg-muted text-muted-foreground transition-all"
+                  title="Mostrar histórico"
+                  aria-label="Mostrar histórico"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+              </div>
+            )}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {/* Botão para mobile para mostrar/ocultar histórico, fixo no topo do chat */}
               <button
-                className="md:hidden w-full mb-4 px-3 py-1 rounded bg-muted text-xs font-semibold border border-border"
-                style={{ position: 'sticky', top: 0, zIndex: 10 }}
+                className="md:hidden mb-4 p-2 rounded-xl bg-card border border-border/50 text-foreground shadow-sm flex items-center justify-center hover:bg-muted transition-colors backdrop-blur-sm bg-opacity-90"
+                style={{ position: 'sticky', top: 0, zIndex: 20 }}
                 onClick={() => setShowHistory((v) => !v)}
                 type="button"
                 aria-label={showHistory ? 'Recolher histórico' : 'Mostrar histórico'}
               >
-                {showHistory ? 'Ocultar histórico' : 'Mostrar histórico'}
+                {showHistory ? <ChevronLeft className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
-              {messages.length === 0 ? (
+              {isExpenseMode && messages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full pt-16 animate-in fade-in zoom-in duration-300">
+                  <h2 className="text-2xl font-bold text-foreground mb-4 text-center">Registro de Gastos via Voz</h2>
+                  <p className="text-muted-foreground text-center mb-10 max-w-sm px-4">
+                    Toque no microfone e diga em alto e bom som o seu gasto. Por exemplo: "Gastei 150 reais de gasolina".
+                  </p>
+                  
+                  <button
+                    onClick={toggleListening}
+                    className={`shrink-0 w-28 h-28 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${isListening ? 'bg-red-500 text-white animate-pulse scale-110 shadow-red-500/40' : 'bg-primary text-primary-foreground hover:scale-105 hover:bg-primary/90'}`}
+                  >
+                    <Mic className="w-10 h-10" />
+                  </button>
+                  
+                  {isListening && <div className="mt-8 text-sm font-semibold tracking-widest uppercase animate-pulse text-red-500">Ouvindo...</div>}
+                  {input && !isListening && (
+                    <div className="mt-8 w-full max-w-sm flex flex-col gap-3 px-4">
+                      <textarea 
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        className="w-full p-3 bg-muted rounded-xl border border-border text-sm resize-none focus:outline-none focus:ring-1 focus:ring-primary h-24"
+                        placeholder="Sua fala aparecerá aqui..."
+                      />
+                      <button 
+                        onClick={() => {
+                          if (!input.trim()) return;
+                          const prompt = `Registre este gasto financeiro na minha conta: ${input}`;
+                          setIsExpenseMode(false);
+                          handleSend(prompt);
+                        }}
+                        disabled={!input.trim()}
+                        className="w-full py-3 bg-primary text-primary-foreground rounded-xl flex items-center justify-center gap-2 font-semibold disabled:opacity-30 shadow-sm"
+                      >
+                       <Send className="w-4 h-4" />
+                       Confirmar Registro
+                      </button>
+                    </div>
+                  )}
+                  
+                  <button
+                    onClick={() => {
+                       setIsExpenseMode(false);
+                       if (isListening) toggleListening();
+                       setInput('');
+                    }}
+                    className="mt-8 px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:underline transition-colors"
+                  >
+                    Cancelar e voltar
+                  </button>
+                </div>
+              ) : messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full pt-16">
                   <h2 className="text-2xl font-bold text-foreground mb-4 text-center">O que você quer aprender hoje?</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl px-4 mt-8">
+                    {[
+                      "🎙️ Registrar Gasto por Voz",
+                      "Como começar a investir em FIIs?",
+                      "Diferença entre LCA/LCI e CDB?",
+                      "Como funciona o Tesouro Direto?"
+                    ].map((pergunta, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          if (idx === 0) {
+                            setIsExpenseMode(true);
+                          } else {
+                            handleSend(pergunta);
+                          }
+                        }}
+                        className="p-4 text-left font-medium border border-border rounded-xl bg-card hover:bg-primary/5 hover:border-primary/50 transition-all text-sm text-foreground shadow-sm group relative overflow-hidden"
+                      >
+                        <div className="flex justify-between items-center relative z-10">
+                          <span>{pergunta}</span>
+                          <span className="opacity-0 group-hover:opacity-100 transition-opacity text-primary">→</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <>
                   {messages.map((m) => (
                     <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap leading-relaxed ${m.role === 'user' ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-muted text-foreground rounded-bl-sm'}`}>
-                        {m.text}
-                        <div className="text-xs opacity-70 mt-1 text-right">{formatTime(m.time)}</div>
+                      <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${m.role === 'user' ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-muted text-foreground rounded-bl-sm shadow-sm border border-border/50'}`}>
+                        {m.role === 'user' ? (
+                          <div className="whitespace-pre-wrap">{m.text}</div>
+                        ) : (
+                          <ReactMarkdown
+                            components={{
+                              p: ({ node, ...props }) => <p className="mb-3 last:mb-0" {...props} />,
+                              strong: ({ node, ...props }) => <strong className="font-bold text-foreground" {...props} />,
+                              ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mb-3 space-y-1" {...props} />,
+                              ul: ({ node, ...props }) => <ul className="list-disc pl-5 mb-3 space-y-1" {...props} />,
+                              li: ({ node, ...props }) => <li className="" {...props} />,
+                              a: ({ node, ...props }) => <a className="text-primary underline underline-offset-2 hover:opacity-80 transition-opacity" target="_blank" rel="noopener noreferrer" {...props} />,
+                              h1: ({ node, ...props }) => <h1 className="text-lg font-bold mb-2 mt-4" {...props} />,
+                              h2: ({ node, ...props }) => <h2 className="text-base font-bold mb-2 mt-3" {...props} />,
+                              h3: ({ node, ...props }) => <h3 className="text-sm font-bold mb-2 mt-2" {...props} />
+                            }}
+                          >
+                            {m.text}
+                          </ReactMarkdown>
+                        )}
+                        <div className={`text-[10px] opacity-70 mt-1.5 text-right ${m.role === 'user' ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>{formatTime(m.time)}</div>
                       </div>
                     </div>
                   ))}
