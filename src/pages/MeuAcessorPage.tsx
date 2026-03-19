@@ -592,7 +592,7 @@ const MeuAcessorPage: React.FC = () => {
     setSending(false);
   };
 
-  const onKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
+  const onKeyDown: React.KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -600,8 +600,8 @@ const MeuAcessorPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-full">
-      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden flex flex-col h-full">
+    <div className="w-full h-full min-h-0 flex flex-col">
+      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
 
         <div className="flex-1 flex min-h-0">
           {/* Left: conversation history */}
@@ -748,7 +748,8 @@ const MeuAcessorPage: React.FC = () => {
                 </button>
               </div>
             )}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 flex flex-col">
+              <div className="w-full flex flex-col flex-1 relative min-h-0">
               {/* Botão para mobile para mostrar/ocultar histórico, fixo no topo do chat */}
               <button
                 className="md:hidden mb-4 p-2 rounded-xl bg-card border border-border/50 text-foreground shadow-sm flex items-center justify-center hover:bg-muted transition-colors backdrop-blur-sm bg-opacity-90"
@@ -759,8 +760,10 @@ const MeuAcessorPage: React.FC = () => {
               >
                 {showHistory ? <ChevronLeft className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
+              
+              <div className="flex flex-col flex-1 space-y-4">
               {isExpenseMode && messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full pt-16 animate-in fade-in zoom-in duration-300">
+                <div className="flex flex-col items-center justify-center flex-1 w-full mt-10 md:mt-16 animate-in fade-in zoom-in duration-300">
                   <h2 className="text-2xl font-bold text-foreground mb-4 text-center">Registro de Gastos via Voz</h2>
                   <p className="text-muted-foreground text-center mb-10 max-w-sm px-4">
                     Toque no microfone e diga em alto e bom som o seu gasto. Por exemplo: "Gastei 150 reais de gasolina".
@@ -810,9 +813,9 @@ const MeuAcessorPage: React.FC = () => {
                   </button>
                 </div>
               ) : messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full pt-16">
-                  <h2 className="text-2xl font-bold text-foreground mb-4 text-center">O que você quer aprender hoje?</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl px-4 mt-8">
+                <div className="flex flex-col items-center justify-center flex-1 w-full mt-10 md:mt-16">
+                  <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6 md:mb-10 text-center leading-tight">O que você quer aprender hoje?</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 md:gap-6 w-full px-2 md:px-0 mt-2 md:mt-4">
                     {[
                       "🎙️ Registrar Gasto por Voz",
                       "Como começar a investir em FIIs?",
@@ -844,11 +847,11 @@ const MeuAcessorPage: React.FC = () => {
                     <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${m.role === 'user' ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-muted text-foreground rounded-bl-sm shadow-sm border border-border/50'}`}>
                         {m.role === 'user' ? (
-                          <div className="whitespace-pre-wrap">{m.text}</div>
+                          <div className="whitespace-pre-wrap break-words">{m.text}</div>
                         ) : (
                           <ReactMarkdown
                             components={{
-                              p: ({ node, ...props }) => <p className="mb-3 last:mb-0" {...props} />,
+                              p: ({ node, ...props }) => <p className="mb-3 last:mb-0 break-words" {...props} />,
                               strong: ({ node, ...props }) => <strong className="font-bold text-foreground" {...props} />,
                               ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mb-3 space-y-1" {...props} />,
                               ul: ({ node, ...props }) => <ul className="list-disc pl-5 mb-3 space-y-1" {...props} />,
@@ -877,11 +880,12 @@ const MeuAcessorPage: React.FC = () => {
               )}
               <div ref={bottomRef} />
             </div>
-            <div className="p-3 border-t border-border">
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder={isListening ? 'Ouvindo...' : 'Digite sua mensagem...'}
+            </div>
+          </div>
+          {/* Input area */}
+          <div className="p-3 md:p-6 lg:px-8 bg-background border-t border-border flex flex-col">
+              <div className="flex gap-2 relative w-full items-end">
+                <textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={onKeyDown}
