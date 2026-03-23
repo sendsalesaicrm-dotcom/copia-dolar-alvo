@@ -25,16 +25,7 @@ export const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
           </button>
         </div>
 
-        {/* Centered page label for Meu Assessor */}
-        {showMeuAcessor && (
-          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 pointer-events-none select-none">
-            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/20">
-              <Bot className="w-4 h-4" style={{ color: '#E35C02' }} />
-              <span className="text-sm font-semibold text-foreground">Meu Assessor</span>
-              <Sparkles className="w-3.5 h-3.5 text-orange-500 animate-pulse" />
-            </div>
-          </div>
-        )}
+
 
         {/* Right corner: Notifications and User Menu Dropdown */}
         <div className="flex items-center space-x-2 sm:space-x-3">
