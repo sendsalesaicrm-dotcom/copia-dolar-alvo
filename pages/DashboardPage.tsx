@@ -306,7 +306,7 @@ const DashboardPage: React.FC = () => {
 
   return (
     <CofrinhoDataProvider values={cofrinhoValues}>
-      <div className="w-full max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 overflow-hidden">
+      <div className="w-full max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="hidden lg:grid lg:grid-cols-[1fr_350px] gap-8 items-stretch">
           <div className="flex flex-col gap-8">
             <ExchangeRateChart

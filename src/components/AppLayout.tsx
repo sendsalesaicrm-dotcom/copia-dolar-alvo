@@ -29,7 +29,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
             <div className={`flex flex-col h-full min-h-0 transition-all duration-300 ease-in-out w-full ${isSidebarOpen ? 'md:pl-64' : 'md:pl-0'}`}>
                 <Topbar onToggleSidebar={() => setSidebarOpen(!isSidebarOpen)} />
-                <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-hidden flex flex-col min-h-0">
+                <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto flex flex-col min-h-0">
                     {children}
                 </main>
             </div>

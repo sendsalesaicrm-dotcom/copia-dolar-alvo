@@ -303,7 +303,7 @@ const PlannerPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 py-8 overflow-hidden">
+    <div className="w-full max-w-7xl mx-auto px-4 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-8 items-start">
         {/* Sidebar Parameters */}
         <motion.div
