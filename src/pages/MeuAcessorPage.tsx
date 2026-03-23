@@ -250,90 +250,51 @@ const MeuAcessorPage: React.FC = () => {
 
   useEffect(() => {
     const init = async () => {
-      // 1) If user just logged in, migrate anon storage
-      if (user?.id) {
-        const userList = loadConversations();
-        const anonList = loadFromKey(anonStorageKey);
-        if (userList.length === 0 && anonList.length > 0) {
-          saveConversations(anonList);
-          try { localStorage.removeItem(anonStorageKey); } catch {}
-        }
-      }
-
-      // 2) Local-first: show conversations from current storage
-      const localList = loadConversations();
-      if (localList.length > 0) {
-        const sorted = [...localList].sort((a, b) => b.lastUpdated - a.lastUpdated);
-        setConversations(sorted);
-        setCurrentConversationId(null); // Não seleciona nenhuma conversa por padrão
-        setMessages([]); // Mostra tela de nova conversa
-      } else {
-        setConversations([]);
-        setCurrentConversationId(null);
-        setMessages([]);
-      }
-
-      // 3) If authenticated, merge Supabase conversations
+      // If user is authenticated, Supabase is the SINGLE SOURCE OF TRUTH.
+      // We always load from Supabase and overwrite local cache.
       if (user?.id) {
         try {
           const { data, error } = await supabase
             .from('all_chat')
             .select('*')
-            .eq('user_id', user.id);
-            
+            .eq('user_id', user.id)
+            .order('updated_at', { ascending: false });
+
           if (!error && data) {
-            const mappedSupabase: Conversation[] = data.map((row: any) => ({
-              id: row.id_chat,
-              title: row.name || 'Conversa',
-              messages: Array.isArray(row.content) ? row.content : [],
-              lastUpdated: new Date(row.updated_at).getTime() || Date.now()
-            }));
+            const supabaseList: Conversation[] = data
+              .map((row: any) => ({
+                id: row.id_chat,
+                title: row.name || 'Conversa',
+                messages: Array.isArray(row.content) ? row.content : [],
+                lastUpdated: new Date(row.updated_at).getTime() || Date.now()
+              }))
+              .filter((c: Conversation) => Array.isArray(c.messages) && c.messages.length > 0);
 
-            setConversations((prev) => {
-              const mergedMap = new Map<string, Conversation>();
-              prev.forEach(c => mergedMap.set(c.id, c));
-              
-              mappedSupabase.forEach(sc => {
-                const existing = mergedMap.get(sc.id);
-                if (!existing || sc.lastUpdated >= existing.lastUpdated) {
-                  mergedMap.set(sc.id, sc);
-                } else if (existing && existing.lastUpdated > sc.lastUpdated) {
-                  // Sync local to supabase if local is newer
-                  supabase.from('all_chat').upsert({
-                    id_chat: existing.id,
-                    user_id: user.id,
-                    name: existing.title,
-                    content: existing.messages,
-                    updated_at: new Date(existing.lastUpdated).toISOString()
-                  }).then();
-                }
-              });
-
-              // Sync local to supabase if not present
-              prev.forEach(lc => {
-                const inSupa = mappedSupabase.find(s => s.id === lc.id);
-                if (!inSupa) {
-                  supabase.from('all_chat').upsert({
-                    id_chat: lc.id,
-                    user_id: user.id,
-                    name: lc.title,
-                    content: lc.messages,
-                    updated_at: new Date(lc.lastUpdated).toISOString()
-                  }).then();
-                }
-              });
-
-              const finalList = Array.from(mergedMap.values())
-               .filter(c => Array.isArray(c.messages) && c.messages.length > 0)
-               .sort((a, b) => b.lastUpdated - a.lastUpdated);
-               
-              saveConversations(finalList);
-              return finalList;
-            });
+            // Supabase wins: overwrite localStorage cache with server data
+            saveConversations(supabaseList);
+            setConversations(supabaseList);
+            setCurrentConversationId(null);
+            setMessages([]);
+          } else {
+            // Supabase error: fall back to local cache as read-only display
+            const localList = loadConversations();
+            setConversations(localList);
+            setCurrentConversationId(null);
+            setMessages([]);
           }
         } catch (err) {
           console.error('Error fetching chat history from Supabase:', err);
+          const localList = loadConversations();
+          setConversations(localList);
+          setCurrentConversationId(null);
+          setMessages([]);
         }
+      } else {
+        // Not authenticated: use localStorage only (anon fallback)
+        const localList = loadConversations();
+        setConversations(localList);
+        setCurrentConversationId(null);
+        setMessages([]);
       }
     };
     init();
