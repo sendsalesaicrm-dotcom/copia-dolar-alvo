@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Send, Mic, MoreVertical, Share2, Pencil, Pin, Archive, ChevronRight, Trash, Menu, ChevronLeft, Plus } from 'lucide-react';
+import { Send, Mic, MoreVertical, Share2, Pencil, Pin, Archive, ChevronRight, Trash, Menu, ChevronLeft, Plus, Bot, Sparkles, TrendingUp, BookOpen, Wallet, Mic as MicIcon } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -600,18 +600,21 @@ const MeuAcessorPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-full min-h-0 flex flex-col">
-      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
+    <div className="w-full h-full min-h-0 flex flex-col relative">
+      {/* Background gradient effect */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/2 via-transparent to-orange-500/2 pointer-events-none" />
+
+      <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/50 shadow-xl overflow-hidden flex flex-col flex-1 min-h-0 relative z-10">
 
         <div className="flex-1 flex min-h-0">
           {/* Left: conversation history */}
           <div className={`border-r border-border flex-shrink-0 flex flex-col bg-background transition-all duration-300 md:relative ${showHistory ? 'w-64' : 'w-0 overflow-hidden border-r-0'}`}> 
-            <div className="px-3 py-2 border-b border-border flex items-center justify-between">
-              <span className="text-sm font-semibold whitespace-nowrap">Histórico</span>
-              <div className="flex items-center gap-1">
+            <div className="px-4 py-3 border-b border-border/50 bg-gradient-to-r from-sidebar-accent/50 to-transparent">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Histórico</span>
                 <button
                   onClick={() => setShowHistory(false)}
-                  className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground hidden md:flex"
+                  className="p-1.5 rounded-lg hover:bg-muted/80 text-muted-foreground hover:text-foreground hidden md:flex transition-colors"
                   title="Ocultar histórico"
                   aria-label="Ocultar histórico"
                 >
@@ -619,47 +622,57 @@ const MeuAcessorPage: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             {/* Botão Nova Conversa */}
             <div className="p-3 border-b border-border/50">
               <button
                 type="button"
                 onClick={createNewConversation}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors font-semibold text-sm shadow-sm"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-primary to-primary/90 text-primary-foreground hover:from-primary/90 hover:to-primary/80 transition-all duration-200 font-semibold text-sm shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5"
               >
                 <Plus className="w-4 h-4" />
                 Nova conversa
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto overflow-x-hidden">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden p-2 space-y-1">
               {conversations.length === 0 ? (
-                <div className="p-3 text-xs text-muted-foreground">Nenhuma conversa</div>
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mb-3">
+                    <BookOpen className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Nenhuma conversa ainda</p>
+                  <p className="text-xs text-muted-foreground/70 mt-1">Comece uma nova conversa!</p>
+                </div>
               ) : (
                 conversations.map((c) => (
                   <div
                     key={c.id}
-                    className={`relative flex items-center justify-between border-b border-border ${c.id === currentConversationId ? 'bg-sidebar-accent text-sidebar-accent-foreground font-semibold' : 'hover:bg-muted'}`}
+                    className={`group relative flex items-center justify-between rounded-xl transition-all duration-200 ${
+                      c.id === currentConversationId
+                        ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-md'
+                        : 'hover:bg-muted/80'
+                    }`}
                   >
                     <button
-                      className="flex-1 text-left px-3 py-2 text-sm overflow-hidden"
+                      className="flex-1 text-left px-3 py-2.5 text-sm overflow-hidden"
                       onClick={() => selectConversation(c.id)}
                     >
-                      <div className="truncate">{c.title}</div>
-                      <div className="text-xs opacity-70 mt-0.5">{formatRelativeTime(c.lastUpdated)}</div>
+                      <div className="truncate font-medium">{c.title}</div>
+                      <div className="text-xs opacity-60 mt-0.5">{formatRelativeTime(c.lastUpdated)}</div>
                     </button>
                     <button
-                      className="p-2 text-muted-foreground hover:text-foreground"
+                      className="p-2 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground transition-all duration-200"
                       onClick={(e) => {
                         e.stopPropagation();
                         const btn = e.currentTarget as HTMLButtonElement;
                         const rect = btn.getBoundingClientRect();
                         setMenuOpenFor(menuOpenFor === c.id ? null : c.id);
-                        
+
                         // Menu tem aprox 260px de altura (130px metade)
                         // Aumentando a margem de segurança para 180px para evitar cortes no rodapé
                         let adjustedTop = rect.top + rect.height / 2;
                         if (adjustedTop + 180 > window.innerHeight) {
-                          adjustedTop = window.innerHeight - 180; 
+                          adjustedTop = window.innerHeight - 180;
                         } else if (adjustedTop - 180 < 0) {
                           adjustedTop = 180;
                         }
@@ -677,53 +690,56 @@ const MeuAcessorPage: React.FC = () => {
                         {/* backdrop to close on outside click */}
                         <div className="fixed inset-0 z-40" onClick={() => setMenuOpenFor(null)} />
                         <div
-                          className="fixed z-50 bg-card text-foreground border border-border rounded-xl shadow-lg min-w-[220px] py-2"
+                          className="fixed z-50 bg-card text-foreground border border-border/50 rounded-xl shadow-2xl min-w-[240px] py-2 animate-in fade-in zoom-in-95 duration-200"
                           style={{ top: menuCoords.top, left: menuCoords.left, transform: 'translateY(-50%)' }}
                         >
+                          <div className="px-3 py-2 border-b border-border/50 mb-1">
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Opções</p>
+                          </div>
                           <button
-                            className="flex items-center w-full text-left px-3 py-2 text-sm hover:bg-muted"
+                            className="flex items-center w-full text-left px-4 py-2.5 text-sm hover:bg-muted/80 transition-colors group"
                             onClick={(e) => { e.stopPropagation(); /* TODO: share */ setMenuOpenFor(null); }}
                           >
-                            <Share2 className="w-4 h-4 mr-2" />
-                            Compartilhar
+                            <Share2 className="w-4 h-4 mr-3 text-muted-foreground group-hover:text-foreground" />
+                            <span>Compartilhar</span>
                           </button>
                           <button
-                            className="flex items-center w-full text-left px-3 py-2 text-sm hover:bg-muted"
+                            className="flex items-center w-full text-left px-4 py-2.5 text-sm hover:bg-muted/80 transition-colors group"
                             onClick={(e) => { e.stopPropagation(); renameConversation(c.id); }}
                           >
-                            <Pencil className="w-4 h-4 mr-2" />
-                            Renomear
+                            <Pencil className="w-4 h-4 mr-3 text-muted-foreground group-hover:text-foreground" />
+                            <span>Renomear</span>
                           </button>
-                          <div className="px-3"><div className="border-t border-border my-2" /></div>
+                          <div className="my-1 border-t border-border/50" />
                           <button
-                            className="flex items-center w-full text-left px-3 py-2 text-sm hover:bg-muted"
+                            className="flex items-center w-full text-left px-4 py-2.5 text-sm hover:bg-muted/80 transition-colors group"
                             onClick={(e) => { e.stopPropagation(); /* TODO: move to project */ setMenuOpenFor(null); }}
                           >
-                            <Archive className="w-4 h-4 mr-2" />
-                            Mover para o projeto
-                            <ChevronRight className="w-4 h-4 ml-auto opacity-70" />
+                            <Archive className="w-4 h-4 mr-3 text-muted-foreground group-hover:text-foreground" />
+                            <span>Mover para o projeto</span>
+                            <ChevronRight className="w-4 h-4 ml-auto opacity-50" />
                           </button>
                           <button
-                            className="flex items-center w-full text-left px-3 py-2 text-sm hover:bg-muted"
+                            className="flex items-center w-full text-left px-4 py-2.5 text-sm hover:bg-muted/80 transition-colors group"
                             onClick={(e) => { e.stopPropagation(); /* TODO: pin chat */ setMenuOpenFor(null); }}
                           >
-                            <Pin className="w-4 h-4 mr-2" />
-                            Fixar chat
+                            <Pin className="w-4 h-4 mr-3 text-muted-foreground group-hover:text-foreground" />
+                            <span>Fixar chat</span>
                           </button>
                           <button
-                            className="flex items-center w-full text-left px-3 py-2 text-sm hover:bg-muted"
+                            className="flex items-center w-full text-left px-4 py-2.5 text-sm hover:bg-muted/80 transition-colors group"
                             onClick={(e) => { e.stopPropagation(); /* TODO: archive chat */ setMenuOpenFor(null); }}
                           >
-                            <Archive className="w-4 h-4 mr-2" />
-                            Arquivar
+                            <Archive className="w-4 h-4 mr-3 text-muted-foreground group-hover:text-foreground" />
+                            <span>Arquivar</span>
                           </button>
-                          <div className="px-3"><div className="border-t border-border my-2" /></div>
+                          <div className="my-1 border-t border-border/50" />
                           <button
-                            className="flex items-center w-full text-left px-3 py-2 text-sm hover:bg-muted text-destructive"
+                            className="flex items-center w-full text-left px-4 py-2.5 text-sm hover:bg-destructive/10 transition-colors group text-destructive"
                             onClick={(e) => { e.stopPropagation(); deleteConversation(c.id); }}
                           >
-                            <Trash className="w-4 h-4 mr-2" />
-                            Excluir
+                            <Trash className="w-4 h-4 mr-3" />
+                            <span>Excluir conversa</span>
                           </button>
                         </div>
                       </>,
@@ -740,7 +756,7 @@ const MeuAcessorPage: React.FC = () => {
               <div className="absolute top-4 left-4 z-10 hidden md:flex">
                 <button
                   onClick={() => setShowHistory(true)}
-                  className="p-2 rounded-full border border-border/50 bg-background shadow-sm hover:bg-muted text-muted-foreground transition-all"
+                  className="p-2.5 rounded-xl border border-border/50 bg-card shadow-md hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-all duration-200 hover:scale-105"
                   title="Mostrar histórico"
                   aria-label="Mostrar histórico"
                 >
@@ -752,100 +768,195 @@ const MeuAcessorPage: React.FC = () => {
               <div className="w-full flex flex-col flex-1 relative min-h-0">
               {/* Botão para mobile para mostrar/ocultar histórico, fixo no topo do chat */}
               <button
-                className="md:hidden mb-4 p-2 rounded-xl bg-card border border-border/50 text-foreground shadow-sm flex items-center justify-center hover:bg-muted transition-colors backdrop-blur-sm bg-opacity-90"
+                className="md:hidden mb-4 p-2.5 rounded-xl bg-card border border-border/50 text-foreground shadow-sm flex items-center justify-center hover:bg-muted/80 transition-all duration-200"
                 style={{ position: 'sticky', top: 0, zIndex: 20 }}
                 onClick={() => setShowHistory((v) => !v)}
                 type="button"
                 aria-label={showHistory ? 'Recolher histórico' : 'Mostrar histórico'}
               >
                 {showHistory ? <ChevronLeft className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                <span className="ml-2 text-sm font-medium">{showHistory ? 'Voltar' : 'Histórico'}</span>
               </button>
               
               <div className="flex flex-col flex-1 space-y-4">
               {isExpenseMode && messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center flex-1 w-full mt-10 md:mt-16 animate-in fade-in zoom-in duration-300">
-                  <h2 className="text-2xl font-bold text-foreground mb-4 text-center">Registro de Gastos via Voz</h2>
-                  <p className="text-muted-foreground text-center mb-10 max-w-sm px-4">
-                    Toque no microfone e diga em alto e bom som o seu gasto. Por exemplo: "Gastei 150 reais de gasolina".
-                  </p>
-                  
-                  <button
-                    onClick={toggleListening}
-                    className={`shrink-0 w-28 h-28 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${isListening ? 'bg-red-500 text-white animate-pulse scale-110 shadow-red-500/40' : 'bg-primary text-primary-foreground hover:scale-105 hover:bg-primary/90'}`}
-                  >
-                    <Mic className="w-10 h-10" />
-                  </button>
-                  
-                  {isListening && <div className="mt-8 text-sm font-semibold tracking-widest uppercase animate-pulse text-red-500">Ouvindo...</div>}
-                  {input && !isListening && (
-                    <div className="mt-8 w-full max-w-sm flex flex-col gap-3 px-4">
-                      <textarea 
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        className="w-full p-3 bg-muted rounded-xl border border-border text-sm resize-none focus:outline-none focus:ring-1 focus:ring-primary h-24"
-                        placeholder="Sua fala aparecerá aqui..."
-                      />
-                      <button 
-                        onClick={() => {
-                          if (!input.trim()) return;
-                          const prompt = `Registre este gasto financeiro na minha conta: ${input}`;
-                          setIsExpenseMode(false);
-                          handleSend(prompt);
-                        }}
-                        disabled={!input.trim()}
-                        className="w-full py-3 bg-primary text-primary-foreground rounded-xl flex items-center justify-center gap-2 font-semibold disabled:opacity-30 shadow-sm"
-                      >
-                       <Send className="w-4 h-4" />
-                       Confirmar Registro
-                      </button>
+                <div className="flex flex-col items-center justify-center flex-1 w-full px-4 animate-zoom-in">
+                  {/* Ícone/Header */}
+                  <div className="text-center mb-8">
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-red-500/20 to-red-500/5 mb-4 shadow-lg shadow-red-500/20">
+                      <MicIcon className="w-10 h-10 text-red-500" />
+                    </div>
+                    <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+                      Registro de Gastos por <span className="text-red-500">Voz</span>
+                    </h2>
+                    <p className="text-muted-foreground text-sm md:text-base max-w-sm mx-auto leading-relaxed">
+                      Toque no microfone e diga o seu gasto em voz alta.
+                      <br />
+                      <span className="text-muted-foreground/70 italic">Ex: "Gastei 150 reais de gasolina"</span>
+                    </p>
+                  </div>
+
+                  {/* Botão de Gravação */}
+                  <div className="relative">
+                    {isListening && (
+                      <>
+                        <div className="absolute inset-0 rounded-full bg-red-500/30 animate-ping" />
+                        <div className="absolute inset-0 rounded-full bg-red-500/20 animate-pulse" />
+                      </>
+                    )}
+                    <button
+                      onClick={toggleListening}
+                      className={`relative shrink-0 w-24 h-24 rounded-full flex items-center justify-center shadow-xl transition-all duration-300 ${
+                        isListening
+                          ? 'bg-gradient-to-br from-red-500 to-red-600 text-white scale-110 shadow-red-500/50'
+                          : 'bg-gradient-to-br from-primary to-primary/90 text-primary-foreground hover:scale-105 shadow-primary/30'
+                      }`}
+                    >
+                      <Mic className={`w-10 h-10 ${isListening ? 'animate-pulse' : ''}`} />
+                    </button>
+                  </div>
+
+                  {/* Status */}
+                  {isListening && (
+                    <div className="mt-8 flex items-center gap-2">
+                      <div className="flex gap-1">
+                        <span className="w-1 h-4 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: '0ms' }} />
+                        <span className="w-1 h-6 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: '150ms' }} />
+                        <span className="w-1 h-4 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: '300ms' }} />
+                        <span className="w-1 h-5 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: '450ms' }} />
+                        <span className="w-1 h-3 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: '600ms' }} />
+                      </div>
+                      <span className="ml-2 text-sm font-semibold uppercase tracking-wider text-red-500">Ouvindo...</span>
                     </div>
                   )}
-                  
+
+                  {/* Preview do Input */}
+                  {input && !isListening && (
+                    <div className="mt-8 w-full max-w-md flex flex-col gap-3 px-4 animate-in slide-in-from-bottom-4 duration-300">
+                      <div className="relative">
+                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">
+                          Seu gasto
+                        </label>
+                        <textarea
+                          value={input}
+                          onChange={(e) => setInput(e.target.value)}
+                          className="w-full p-4 pr-4 bg-card rounded-xl border-2 border-border/50 focus:border-primary/50 text-foreground text-sm resize-none focus:outline-none transition-all duration-200 placeholder:text-muted-foreground/50"
+                          placeholder="Sua fala aparecerá aqui..."
+                          rows={3}
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            if (!input.trim()) return;
+                            const prompt = `Registre este gasto financeiro na minha conta: ${input}`;
+                            setIsExpenseMode(false);
+                            handleSend(prompt);
+                          }}
+                          disabled={!input.trim()}
+                          className="flex-1 py-3.5 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground rounded-xl flex items-center justify-center gap-2 font-semibold disabled:opacity-50 shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-200 disabled:shadow-none"
+                        >
+                          <Send className="w-4 h-4" />
+                          Confirmar Registro
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Botão Cancelar */}
                   <button
                     onClick={() => {
-                       setIsExpenseMode(false);
-                       if (isListening) toggleListening();
-                       setInput('');
+                      setIsExpenseMode(false);
+                      if (isListening) toggleListening();
+                      setInput('');
                     }}
-                    className="mt-8 px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:underline transition-colors"
+                    className="mt-8 px-5 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground bg-muted/50 hover:bg-muted rounded-lg transition-all duration-200"
                   >
                     Cancelar e voltar
                   </button>
                 </div>
               ) : messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center flex-1 w-full mt-10 md:mt-16">
-                  <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6 md:mb-10 text-center leading-tight">O que você quer aprender hoje?</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 md:gap-6 w-full px-2 md:px-0 mt-2 md:mt-4">
+                <div className="flex flex-col items-center justify-center flex-1 w-full px-4">
+                  {/* Hero Section */}
+                  <div className="text-center mb-8 animate-slide-up">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 mb-4 shadow-lg">
+                      <Bot className="w-8 h-8 text-primary" />
+                    </div>
+                    <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3 leading-tight">
+                      Olá, <span className="bg-gradient-to-r from-primary to-orange-500 bg-clip-text text-transparent">{userDisplayName.split(' ')[0]}</span>!
+                    </h2>
+                    <p className="text-muted-foreground text-base md:text-lg max-w-md mx-auto">
+                      Sou seu assessor virtual. Como posso te ajudar hoje?
+                    </p>
+                  </div>
+
+                  {/* Sugestões de Perguntas */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full max-w-4xl mx-auto">
                     {[
-                      "🎙️ Registrar Gasto por Voz",
-                      "Como começar a investir em FIIs?",
-                      "Diferença entre LCA/LCI e CDB?",
-                      "Como funciona o Tesouro Direto?"
-                    ].map((pergunta, idx) => (
+                      {
+                        label: "Registrar Gasto por Voz",
+                        icon: <MicIcon className="w-5 h-5" />,
+                        gradient: "from-violet-500/10 to-purple-500/10",
+                        iconBg: "bg-violet-500/20",
+                        action: () => setIsExpenseMode(true)
+                      },
+                      {
+                        label: "Investir em FIIs",
+                        icon: <TrendingUp className="w-5 h-5" />,
+                        gradient: "from-emerald-500/10 to-green-500/10",
+                        iconBg: "bg-emerald-500/20",
+                        action: () => handleSend("Como começar a investir em FIIs?")
+                      },
+                      {
+                        label: "LCA/LCI vs CDB",
+                        icon: <BookOpen className="w-5 h-5" />,
+                        gradient: "from-blue-500/10 to-cyan-500/10",
+                        iconBg: "bg-blue-500/20",
+                        action: () => handleSend("Diferença entre LCA/LCI e CDB?")
+                      },
+                      {
+                        label: "Tesouro Direto",
+                        icon: <Wallet className="w-5 h-5" />,
+                        gradient: "from-orange-500/10 to-amber-500/10",
+                        iconBg: "bg-orange-500/20",
+                        action: () => handleSend("Como funciona o Tesouro Direto?")
+                      }
+                    ].map((sugestao, idx) => (
                       <button
                         key={idx}
-                        onClick={() => {
-                          if (idx === 0) {
-                            setIsExpenseMode(true);
-                          } else {
-                            handleSend(pergunta);
-                          }
-                        }}
-                        className="p-4 text-left font-medium border border-border rounded-xl bg-card hover:bg-primary/5 hover:border-primary/50 transition-all text-sm text-foreground shadow-sm group relative overflow-hidden"
+                        onClick={sugestao.action}
+                        className={`group relative p-4 rounded-2xl border border-border/50 bg-gradient-to-br ${sugestao.gradient} hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5 overflow-hidden`}
                       >
-                        <div className="flex justify-between items-center relative z-10">
-                          <span>{pergunta}</span>
-                          <span className="opacity-0 group-hover:opacity-100 transition-opacity text-primary">→</span>
+                        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        <div className="relative z-10 flex flex-col items-center text-center gap-3">
+                          <div className={`w-12 h-12 rounded-xl ${sugestao.iconBg} flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300`}>
+                            {sugestao.icon}
+                          </div>
+                          <span className="text-sm font-medium text-foreground">{sugestao.label}</span>
                         </div>
                       </button>
                     ))}
                   </div>
+
+                  {/* Dica extra */}
+                  <div className="mt-8 flex items-center gap-2 text-xs text-muted-foreground/70">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Ou digite sua própria pergunta abaixo</span>
+                  </div>
                 </div>
               ) : (
                 <>
-                  {messages.map((m) => (
-                    <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${m.role === 'user' ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-muted text-foreground rounded-bl-sm shadow-sm border border-border/50'}`}>
+                  {messages.map((m, idx) => (
+                    <div
+                      key={m.id}
+                      className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-slide-up`}
+                      style={{ animationDelay: `${idx * 50}ms`, animationDuration: '0.3s' }}
+                    >
+                      <div className={`max-w-[85%] md:max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
+                        m.role === 'user'
+                          ? 'bg-gradient-to-br from-primary to-primary/90 text-primary-foreground rounded-br-md shadow-primary/20'
+                          : 'bg-card text-foreground rounded-bl-md border border-border/50 shadow-md'
+                      }`}>
                         {m.role === 'user' ? (
                           <div className="whitespace-pre-wrap break-words">{m.text}</div>
                         ) : (
@@ -865,14 +976,25 @@ const MeuAcessorPage: React.FC = () => {
                             {m.text}
                           </ReactMarkdown>
                         )}
-                        <div className={`text-[10px] opacity-70 mt-1.5 text-right ${m.role === 'user' ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>{formatTime(m.time)}</div>
+                        <div className={`text-[10px] mt-2 text-right ${m.role === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground/70'}`}>
+                          {formatTime(m.time)}
+                        </div>
                       </div>
                     </div>
                   ))}
                   {sending && (
-                    <div className="flex justify-start">
-                      <div className="max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap leading-relaxed bg-muted text-foreground rounded-bl-sm italic animate-pulse">
-                        {typingPhrases[typingPhraseIndex]} {typingDots}
+                    <div className="flex justify-start animate-slide-up">
+                      <div className="max-w-[85%] rounded-2xl px-4 py-3 bg-card border border-border/50 shadow-md">
+                        <div className="flex items-center gap-2">
+                          <div className="flex gap-1">
+                            <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                            <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                            <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                          </div>
+                          <span className="text-xs text-muted-foreground italic capitalize">
+                            {typingPhrases[typingPhraseIndex]}{typingDots}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -883,40 +1005,52 @@ const MeuAcessorPage: React.FC = () => {
             </div>
           </div>
           {/* Input area */}
-          <div className="p-3 md:p-6 lg:px-8 bg-background border-t border-border flex flex-col">
-              <div className="flex gap-2 relative w-full items-end">
+          <div className="p-4 md:p-6 lg:px-8 bg-gradient-to-t from-background to-background/50 border-t border-border/50">
+            <div className="flex gap-2 relative w-full items-end max-w-4xl mx-auto">
+              <div className="flex-1 relative">
                 <textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={onKeyDown}
-                  className={`flex-1 px-3 py-2 rounded-lg border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${isListening ? 'border-red-400 ring-2 ring-red-400/30' : 'border-input'}`}
+                  placeholder="Digite sua pergunta..."
+                  rows={1}
+                  className={`w-full px-4 py-3 pr-12 rounded-xl border-2 bg-card text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-0 transition-all duration-200 resize-none ${
+                    isListening
+                      ? 'border-red-400/50 bg-red-500/5'
+                      : 'border-border/50 hover:border-border focus:border-primary/50'
+                  } ${sending ? 'opacity-60 cursor-not-allowed' : ''}`}
                   disabled={sending}
+                  style={{ minHeight: '48px', maxHeight: '120px' }}
                 />
                 {speechSupported && (
                   <button
                     type="button"
                     onClick={toggleListening}
                     disabled={sending}
-                    className={`inline-flex items-center justify-center w-10 h-10 rounded-lg transition-all ${isListening ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/30' : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'} disabled:opacity-60 disabled:cursor-not-allowed`}
+                    className={`absolute right-2 bottom-2 w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 ${
+                      isListening
+                        ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 scale-105'
+                        : 'bg-muted/50 text-muted-foreground hover:bg-primary/10 hover:text-primary'
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
                     aria-label={isListening ? 'Parar gravação' : 'Gravar áudio'}
                     title={isListening ? 'Parar gravação' : 'Enviar por voz'}
                   >
                     <Mic className="w-4 h-4" />
                   </button>
                 )}
-                <button
-                  type="button"
-                  onClick={handleSend}
-                  disabled={sending || !input.trim()}
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-white disabled:opacity-60 disabled:cursor-not-allowed"
-                  style={{ backgroundColor: '#E35C02' }}
-                  aria-label="Enviar"
-                >
-                  <Send className="w-4 h-4" />
-                  Enviar
-                </button>
               </div>
+              <button
+                type="button"
+                onClick={handleSend}
+                disabled={sending || !input.trim()}
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-semibold text-white shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 disabled:shadow-none transition-all duration-200 disabled:cursor-not-allowed bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 active:scale-95 disabled:opacity-50 disabled:from-gray-400 disabled:to-gray-500"
+                aria-label="Enviar"
+              >
+                <Send className="w-4 h-4" />
+                <span className="hidden sm:inline">Enviar</span>
+              </button>
             </div>
+          </div>
           </div>
         </div>
       </div>
