@@ -685,11 +685,10 @@ const MeuAssessorPage: React.FC = () => {
                 </button>
               </div>
             )}
-            <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 flex flex-col">
-              <div className="w-full flex flex-col flex-1 relative min-h-0">
+            {/* Mobile Header (Fixed) */}
+            <div className="md:hidden flex-none p-4 pb-2 z-20">
               <button
-                className="md:hidden mb-4 p-2.5 rounded-xl bg-card border border-border/50 text-foreground shadow-sm flex items-center justify-center hover:bg-muted/80 transition-all duration-200"
-                style={{ position: 'sticky', top: 0, zIndex: 20 }}
+                className="w-full p-2.5 rounded-xl bg-card border border-border/50 text-foreground shadow-sm flex items-center justify-center hover:bg-muted/80 transition-all duration-200"
                 onClick={() => setShowHistory((v) => !v)}
                 type="button"
                 aria-label={showHistory ? 'Recolher histórico' : 'Mostrar histórico'}
@@ -697,6 +696,10 @@ const MeuAssessorPage: React.FC = () => {
                 {showHistory ? <ChevronLeft className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                 <span className="ml-2 text-sm font-medium">{showHistory ? 'Voltar' : 'Histórico'}</span>
               </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-4 pb-4 md:p-6 lg:p-8 flex flex-col pt-0 md:pt-6 lg:pt-8">
+              <div className="w-full flex flex-col flex-1 relative min-h-0">
               
               <div className="flex flex-col flex-1 space-y-4">
               {isExpenseMode && messages.length === 0 ? (
