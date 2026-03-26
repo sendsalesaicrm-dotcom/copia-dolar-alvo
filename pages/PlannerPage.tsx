@@ -303,13 +303,13 @@ const PlannerPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-8 items-start">
+    <div className="w-full max-w-7xl mx-auto px-4 py-8 overflow-x-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6 lg:gap-8 items-start">
         {/* Sidebar Parameters */}
         <motion.div
-          initial={{ opacity: 0, x: -50 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="bg-card rounded-2xl shadow-sm p-6 border border-border h-fit sticky top-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-card rounded-2xl shadow-sm p-6 border border-border h-fit lg:sticky lg:top-8"
         >
           <div className="flex justify-between items-center mb-6">
             <div>
@@ -392,7 +392,7 @@ const PlannerPage: React.FC = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="h-full w-full min-h-[400px] flex flex-col items-center justify-center bg-card/30 rounded-2xl border-2 border-dashed border-border p-12 text-center"
+                className="h-full w-full min-h-[400px] flex flex-col items-center justify-center bg-card/30 rounded-2xl border-2 border-dashed border-border p-6 sm:p-12 text-center"
               >
                 <div className="p-4 bg-primary/10 rounded-full mb-4">
                   <TrendingUp className="w-8 h-8 text-primary/40" />

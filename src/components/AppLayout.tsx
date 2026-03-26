@@ -24,12 +24,12 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     const showOnboardingModal = onboardingIncomplete && !ONBOARDING_ROUTES.includes(location.pathname);
 
     return (
-        <div className="bg-background text-foreground font-sans h-screen lg:h-[100dvh] flex tracking-tighter-6 overflow-hidden max-w-full">
+        <div className="bg-background text-foreground font-sans h-[100dvh] w-full flex overflow-hidden">
             <Sidebar isOpen={isSidebarOpen} setIsOpen={setSidebarOpen} />
 
             <div className={`flex flex-col h-full min-h-0 transition-all duration-300 ease-in-out w-full ${isSidebarOpen ? 'md:pl-64' : 'md:pl-0'}`}>
                 <Topbar onToggleSidebar={() => setSidebarOpen(!isSidebarOpen)} />
-                <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto flex flex-col min-h-0">
+                <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto overflow-x-hidden flex flex-col min-h-0">
                     {children}
                 </main>
             </div>

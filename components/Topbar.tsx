@@ -10,7 +10,7 @@ interface TopbarProps {
 
 export const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar }) => {
   const location = useLocation();
-  const showMeuAcessor = location.pathname === '/meu-acessor';
+  const showMeuAcessor = location.pathname === '/meu-assessor';
   return (
     <header className="relative z-20 bg-gradient-to-r from-background via-background to-background/80 border-b border-border/50 shadow-sm backdrop-blur-sm">
       <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">

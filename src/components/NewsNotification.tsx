@@ -124,14 +124,14 @@ export const NewsNotification: React.FC = () => {
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-danger text-[10px] font-bold text-white ring-2 ring-background">
+          <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground ring-2 ring-background">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden flex flex-col max-h-[80vh]">
+        <div className="fixed left-1/2 -translate-x-1/2 top-16 sm:absolute sm:left-auto sm:translate-x-0 sm:right-0 sm:top-auto sm:mt-2 w-[calc(100vw-2rem)] sm:w-80 md:w-96 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden flex flex-col max-h-[80vh]">
           <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-muted/30">
             <h3 className="font-semibold text-sm">Últimas Notícias (Dólar)</h3>
             <button 

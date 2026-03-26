@@ -5,6 +5,13 @@
       "destination": "/index.html"
     }
   ],
+  "redirects": [
+    {
+      "source": "/meu-acessor",
+      "destination": "/meu-assessor",
+      "permanent": true
+    }
+  ],
   "headers": [
     {
       "source": "/",

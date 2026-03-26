@@ -49,7 +49,7 @@ const suggestReply = (input: string): string => {
   return 'Entendi. Poderia me dar um pouco mais de contexto para eu te ajudar melhor?';
 };
 
-const MeuAcessorPage: React.FC = () => {
+const MeuAssessorPage: React.FC = () => {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -160,7 +160,6 @@ const MeuAcessorPage: React.FC = () => {
       const ct = res.headers.get('content-type') || '';
       if (ct.includes('application/json')) {
         const data = await res.json();
-        // Try to extract a plain text string from various shapes (object/array)
         const extractReply = (d: any): string | undefined => {
           if (!d) return undefined;
           if (typeof d === 'string') return d;
@@ -184,21 +183,17 @@ const MeuAcessorPage: React.FC = () => {
 
         const clean = (s: string): string => {
           let t = s.trim();
-          // If wrapped in quotes (e.g., "..."), unquote safely
           if ((t.startsWith('"') && t.endsWith('"')) || (t.startsWith("'") && t.endsWith("'"))) {
             try { t = JSON.parse(t); } catch { t = t.slice(1, -1); }
           }
-          // Unescape common sequences
           t = t.replace(/\\"/g, '"').replace(/\\n/g, '\n');
           return t;
         };
 
         const candidate = extractReply(data);
         if (typeof candidate === 'string' && candidate.trim()) return clean(candidate);
-        // No usable text found
         return 'Sem conteúdo retornado pelo webhook.';
       }
-      // If server returned plain text
       const txt = await res.text();
       return (txt || 'Sem conteúdo retornado pelo webhook.').replace(/^\s*"|"\s*$/g, '');
     } catch (err: any) {
@@ -212,8 +207,8 @@ const MeuAcessorPage: React.FC = () => {
   }, [messages.length, sending]);
 
   // Storage helpers for conversation history
-  const storageKey = useMemo(() => `meu_acessor_conversations_${user?.id || 'anon'}`, [user?.id]);
-  const anonStorageKey = 'meu_acessor_conversations_anon';
+  const storageKey = useMemo(() => `meu_assessor_conversations_${user?.id || 'anon'}`, [user?.id]);
+  const anonStorageKey = 'meu_assessor_conversations_anon';
 
   const loadConversations = (): Conversation[] => {
     try {
@@ -221,7 +216,6 @@ const MeuAcessorPage: React.FC = () => {
       if (!raw) return [];
       const parsed = JSON.parse(raw);
       const list = Array.isArray(parsed) ? parsed : [];
-      // Filter out empty conversations (no messages)
       return list.filter((c: Conversation) => Array.isArray(c.messages) && c.messages.length > 0);
     } catch {
       return [];
@@ -250,8 +244,6 @@ const MeuAcessorPage: React.FC = () => {
 
   useEffect(() => {
     const init = async () => {
-      // If user is authenticated, Supabase is the SINGLE SOURCE OF TRUTH.
-      // We always load from Supabase and overwrite local cache.
       if (user?.id) {
         try {
           const { data, error } = await supabase
@@ -270,13 +262,11 @@ const MeuAcessorPage: React.FC = () => {
               }))
               .filter((c: Conversation) => Array.isArray(c.messages) && c.messages.length > 0);
 
-            // Supabase wins: overwrite localStorage cache with server data
             saveConversations(supabaseList);
             setConversations(supabaseList);
             setCurrentConversationId(null);
             setMessages([]);
           } else {
-            // Supabase error: fall back to local cache as read-only display
             const localList = loadConversations();
             setConversations(localList);
             setCurrentConversationId(null);
@@ -290,7 +280,6 @@ const MeuAcessorPage: React.FC = () => {
           setMessages([]);
         }
       } else {
-        // Not authenticated: use localStorage only (anon fallback)
         const localList = loadConversations();
         setConversations(localList);
         setCurrentConversationId(null);
@@ -298,19 +287,12 @@ const MeuAcessorPage: React.FC = () => {
       }
     };
     init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey, user?.id]);
 
-  // Read-only refresh from Supabase
-  // (Removido: refreshFromSupabase)
-
   const createNewConversation = () => {
-    // Do not create a local empty conversation entry.
-    // Just clear current selection and prepare for first message.
     setCurrentConversationId(null);
     setMessages([]);
     setIsExpenseMode(false);
-    // Persist nothing yet; materialize on first send.
   };
 
   const selectConversation = (id: string) => {
@@ -327,7 +309,6 @@ const MeuAcessorPage: React.FC = () => {
     setConversations((list) => {
       const filtered = list.filter((c) => c.id !== id);
       if (filtered.length === 0) {
-        // Do not auto-create an empty conversation; leave state empty.
         saveConversations([]);
         setCurrentConversationId(null);
         setMessages([]);
@@ -342,7 +323,6 @@ const MeuAcessorPage: React.FC = () => {
       return filtered;
     });
     setMenuOpenFor(null);
-    // Excluir no Supabase (melhor-esforço)
     try {
       if (user?.id) {
         supabase
@@ -379,7 +359,6 @@ const MeuAcessorPage: React.FC = () => {
     setConversations((list) => {
       const updated = list.map((c) => (c.id === id ? { ...c, title: newTitle.trim(), lastUpdated: Date.now() } : c));
       saveConversations(updated);
-      // Atualizar no Supabase (melhor-esforço)
       try {
         if (user?.id) {
           supabase
@@ -387,9 +366,7 @@ const MeuAcessorPage: React.FC = () => {
             .update({ name: newTitle.trim(), updated_at: new Date().toISOString() })
             .eq('id_chat', id)
             .eq('user_id', user.id)
-            .then(({ error }) => {
-              if (error) console.error('Erro ao renomear all_chat:', error);
-            });
+            .then(({ error }) => { if (error) console.error('Erro ao renomear all_chat:', error); });
             
           supabase
             .from('chat_registros')
@@ -406,7 +383,6 @@ const MeuAcessorPage: React.FC = () => {
     setMenuOpenFor(null);
   };
 
-  // Close menu on ESC
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setMenuOpenFor(null);
@@ -454,31 +430,25 @@ const MeuAcessorPage: React.FC = () => {
     const text = textToUse.trim();
     if (!text || sending) return;
     setSending(true);
-    // Se não houver conversa ativa, cria uma agora (local), e só persiste no Supabase ao salvar a primeira mensagem
     let activeId = currentConversationId;
     if (!activeId) {
       activeId = crypto.randomUUID();
-      // Gera título dinâmico baseado no input do usuário
       let title = input.trim();
       if (title.length > 32) title = title.slice(0, 32) + '...';
-      // Se o input for vazio, usa fallback
       if (!title) title = `Conversa ${conversations.length + 1}`;
       const conv: Conversation = { id: activeId, title, lastUpdated: Date.now(), messages: [] };
       const list = [conv, ...conversations];
       setConversations(list);
       setCurrentConversationId(activeId);
-      // Do not persist empty conversation yet; will persist after first message is added.
     }
     const userMsg: Msg = { id: crypto.randomUUID(), role: 'user', text, time: now() };
     setMessages((m) => [...m, userMsg]);
-    // Update current conversation with user message
     if (activeId) {
       setConversations((list) => {
         const updated = list.map((c) =>
           c.id === activeId ? { ...c, messages: [...(c.messages || []), userMsg], lastUpdated: Date.now() } : c
         );
         saveConversations(updated);
-        // Persistir conversa ativa (melhor-esforço) apenas se autenticado
         try {
           const active = updated.find((c) => c.id === activeId);
           if (active && user?.id) {
@@ -501,20 +471,16 @@ const MeuAcessorPage: React.FC = () => {
     }
     setInput('');
 
-    // Prefer webhook, fallback to local suggestion when not configured or failing
     const replyText = await callWebhook(text, [...messages, userMsg]);
-    // Small delay to keep UX smooth
     await new Promise((r) => setTimeout(r, 150));
     const botMsg: Msg = { id: crypto.randomUUID(), role: 'assistant', text: replyText, time: now() };
     setMessages((m) => [...m, botMsg]);
-    // Update current conversation with assistant message
     if (activeId) {
       setConversations((list) => {
         const updated = list.map((c) =>
           c.id === activeId ? { ...c, messages: [...(c.messages || []), botMsg], lastUpdated: Date.now() } : c
         );
         saveConversations(updated);
-        // Persistir conversa ativa (melhor-esforço) apenas se autenticado
         try {
           const active = updated.find((c) => c.id === activeId);
           if (active && user?.id) {
@@ -532,7 +498,6 @@ const MeuAcessorPage: React.FC = () => {
                 created_at: new Date().toISOString(),
               })
               .then(({ error }) => { if (error) console.error('Erro chat_registros:', error); });
-            // Mirror into all_chat table
             supabase
               .from('all_chat')
               .upsert({
@@ -562,14 +527,13 @@ const MeuAcessorPage: React.FC = () => {
 
   return (
     <div className="w-full h-full min-h-0 flex flex-col relative">
-      {/* Background gradient effect */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/2 via-transparent to-orange-500/2 pointer-events-none" />
 
       <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/50 shadow-xl overflow-hidden flex flex-col flex-1 min-h-0 relative z-10">
 
         <div className="flex-1 flex min-h-0">
           {/* Left: conversation history */}
-          <div className={`border-r border-border flex-shrink-0 flex flex-col bg-background transition-all duration-300 md:relative ${showHistory ? 'w-64' : 'w-0 overflow-hidden border-r-0'}`}> 
+          <div className={`border-r border-border flex-shrink-0 flex flex-col bg-background transition-all duration-300 md:relative ${showHistory ? 'w-64' : 'w-0 overflow-hidden border-r-0'}`}>
             <div className="px-4 py-3 border-b border-border/50 bg-gradient-to-r from-sidebar-accent/50 to-transparent">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Histórico</span>
@@ -584,7 +548,6 @@ const MeuAcessorPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Botão Nova Conversa */}
             <div className="p-3 border-b border-border/50">
               <button
                 type="button"
@@ -629,8 +592,6 @@ const MeuAcessorPage: React.FC = () => {
                         const rect = btn.getBoundingClientRect();
                         setMenuOpenFor(menuOpenFor === c.id ? null : c.id);
 
-                        // Menu tem aprox 260px de altura (130px metade)
-                        // Aumentando a margem de segurança para 180px para evitar cortes no rodapé
                         let adjustedTop = rect.top + rect.height / 2;
                         if (adjustedTop + 180 > window.innerHeight) {
                           adjustedTop = window.innerHeight - 180;
@@ -648,7 +609,6 @@ const MeuAcessorPage: React.FC = () => {
                     </button>
                     {menuOpenFor === c.id && menuCoords && createPortal(
                       <>
-                        {/* backdrop to close on outside click */}
                         <div className="fixed inset-0 z-40" onClick={() => setMenuOpenFor(null)} />
                         <div
                           className="fixed z-50 bg-card text-foreground border border-border/50 rounded-xl shadow-2xl min-w-[240px] py-2 animate-in fade-in zoom-in-95 duration-200"
@@ -727,7 +687,6 @@ const MeuAcessorPage: React.FC = () => {
             )}
             <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 flex flex-col">
               <div className="w-full flex flex-col flex-1 relative min-h-0">
-              {/* Botão para mobile para mostrar/ocultar histórico, fixo no topo do chat */}
               <button
                 className="md:hidden mb-4 p-2.5 rounded-xl bg-card border border-border/50 text-foreground shadow-sm flex items-center justify-center hover:bg-muted/80 transition-all duration-200"
                 style={{ position: 'sticky', top: 0, zIndex: 20 }}
@@ -742,7 +701,6 @@ const MeuAcessorPage: React.FC = () => {
               <div className="flex flex-col flex-1 space-y-4">
               {isExpenseMode && messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center flex-1 w-full px-4 animate-zoom-in">
-                  {/* Ícone/Header */}
                   <div className="text-center mb-8">
                     <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-red-500/20 to-red-500/5 mb-4 shadow-lg shadow-red-500/20">
                       <MicIcon className="w-10 h-10 text-red-500" />
@@ -757,7 +715,6 @@ const MeuAcessorPage: React.FC = () => {
                     </p>
                   </div>
 
-                  {/* Botão de Gravação */}
                   <div className="relative">
                     {isListening && (
                       <>
@@ -777,7 +734,6 @@ const MeuAcessorPage: React.FC = () => {
                     </button>
                   </div>
 
-                  {/* Status */}
                   {isListening && (
                     <div className="mt-8 flex items-center gap-2">
                       <div className="flex gap-1">
@@ -791,7 +747,6 @@ const MeuAcessorPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Preview do Input */}
                   {input && !isListening && (
                     <div className="mt-8 w-full max-w-md flex flex-col gap-3 px-4 animate-in slide-in-from-bottom-4 duration-300">
                       <div className="relative">
@@ -824,7 +779,6 @@ const MeuAcessorPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Botão Cancelar */}
                   <button
                     onClick={() => {
                       setIsExpenseMode(false);
@@ -838,7 +792,6 @@ const MeuAcessorPage: React.FC = () => {
                 </div>
               ) : messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center flex-1 w-full px-4">
-                  {/* Hero Section */}
                   <div className="text-center mb-8 animate-slide-up">
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 mb-4 shadow-lg">
                       <Bot className="w-8 h-8 text-primary" />
@@ -851,7 +804,6 @@ const MeuAcessorPage: React.FC = () => {
                     </p>
                   </div>
 
-                  {/* Sugestões de Perguntas */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full max-w-4xl mx-auto">
                     {[
                       {
@@ -899,7 +851,6 @@ const MeuAcessorPage: React.FC = () => {
                     ))}
                   </div>
 
-                  {/* Dica extra */}
                   <div className="mt-8 flex items-center gap-2 text-xs text-muted-foreground/70">
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>Ou digite sua própria pergunta abaixo</span>
@@ -1019,4 +970,4 @@ const MeuAcessorPage: React.FC = () => {
   );
 };
 
-export default MeuAcessorPage;
+export default MeuAssessorPage;

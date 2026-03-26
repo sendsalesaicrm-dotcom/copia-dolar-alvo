@@ -197,7 +197,12 @@ const DashboardPage: React.FC = () => {
   useEffect(() => {
     const fetchCotacoes = async () => {
       try {
-        const response = await fetch('https://economia.awesomeapi.com.br/last/USD-BRL,EUR-BRL,BTC-BRL,ETH-BRL');
+        const response = await fetch('https://blobgpedbfdjweiyxbzu.supabase.co/functions/v1/cotacoes', {
+          headers: {
+            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJsb2JncGVkYmZkandlaXl4Ynp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MjE3NzQsImV4cCI6MjA4NzA5Nzc3NH0.j84fRavzFlfsxVma-f0axr1X8xw22grywqITifugI6g`,
+            'Content-Type': 'application/json'
+          }
+        });
         const data = await response.json();
         setCotacoes(data);
         setLastUpdated(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));

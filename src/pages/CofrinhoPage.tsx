@@ -643,7 +643,9 @@ const CofrinhoPage: React.FC = () => {
         {metas.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full min-h-[600px]">
             <video
-              src="https://blobgpedbfdjweiyxbzu.supabase.co/storage/v1/object/public/imagens/cofre_vazio_reverse.webm"
+              src={theme === 'dark'
+                ? 'https://blobgpedbfdjweiyxbzu.supabase.co/storage/v1/object/public/imagens/cofre_vazio_reverse_branco.webm'
+                : 'https://blobgpedbfdjweiyxbzu.supabase.co/storage/v1/object/public/imagens/cofre_vazio_reverse.webm'}
               autoPlay
               loop
               muted
@@ -686,21 +688,23 @@ const CofrinhoPage: React.FC = () => {
 
                 <p className="mt-4 text-xs font-medium text-muted-foreground italic">Clique nos quadradinhos para marcar aportes realizados.</p>
               </div>
-              <div className="flex items-end gap-2">
-                <label className="block text-xs text-muted-foreground mb-1">Selecionar Meta</label>
-                <select value={selectedMetaId ?? ''} onChange={(e) => setSelectedMetaId(e.target.value || null)} className="px-3 py-2 border rounded-lg bg-background text-foreground border-input">
-                  {metas.length === 0 ? (
-                    <option value="">Nenhuma meta</option>
-                  ) : (
-                    metas.map((m) => (
-                      <option key={m.id} value={m.id}>{m.nome ?? 'Meta'}</option>
-                    ))
-                  )}
-                </select>
-                <button type="button" onClick={handleDeleteMeta} disabled={!selectedMetaId} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed" style={{ backgroundColor: '#E35C02' }} aria-label="Excluir cofrinho" title="Excluir cofrinho">
-                  <Trash2 className="w-4 h-4 text-white" />
-                  <span className="hidden sm:inline">Excluir</span>
-                </button>
+              <div className="flex flex-col items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                <label className="block text-xs text-muted-foreground font-bold uppercase tracking-widest">Selecionar Meta</label>
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-center">
+                  <select value={selectedMetaId ?? ''} onChange={(e) => setSelectedMetaId(e.target.value || null)} className="flex-1 sm:flex-none px-3 py-2 border rounded-lg bg-background text-foreground border-input text-sm min-w-0">
+                    {metas.length === 0 ? (
+                      <option value="">Nenhuma meta</option>
+                    ) : (
+                      metas.map((m) => (
+                        <option key={m.id} value={m.id}>{m.nome ?? 'Meta'}</option>
+                      ))
+                    )}
+                  </select>
+                  <button type="button" onClick={handleDeleteMeta} disabled={!selectedMetaId} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0" style={{ backgroundColor: '#E35C02' }} aria-label="Excluir cofrinho" title="Excluir cofrinho">
+                    <Trash2 className="w-4 h-4 text-white" />
+                    <span className="hidden sm:inline">Excluir</span>
+                  </button>
+                </div>
               </div>
             </div>
             {/* Grid de dias do mês atual, com animação e marcação */}

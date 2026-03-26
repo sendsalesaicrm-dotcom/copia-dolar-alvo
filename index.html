@@ -12,6 +12,33 @@
 
 <body class="bg-background light">
     <div id="root"></div>
+    <script>
+        // Hotfix: append AwesomeAPI token to requests to economia.awesomeapi.com.br
+        (function(){
+            const TOKEN = 'e4f3a92e9ca9fd759191e13bce9d89faf9f540ceb92ee073eff53df99272e630';
+            if(typeof window === 'undefined') return;
+            const origFetch = window.fetch.bind(window);
+            window.fetch = function(input, init){
+                try{
+                    let url = typeof input === 'string' ? input : (input && input.url) || '';
+                    if(url && url.includes('economia.awesomeapi.com.br')){
+                        const hasQuery = url.indexOf('?') !== -1;
+                        const sep = hasQuery ? '&' : '?';
+                        // Avoid double-appending token
+                        if(!url.includes('token=')){
+                            url = url + sep + 'token=' + TOKEN;
+                            if(typeof input === 'object' && input && input.url){
+                                input = new Request(url, input);
+                            } else {
+                                input = url;
+                            }
+                        }
+                    }
+                }catch(e){}
+                return origFetch(input, init);
+            };
+        })();
+    </script>
     <script type="module" src="/index.tsx"></script>
 </body>
 

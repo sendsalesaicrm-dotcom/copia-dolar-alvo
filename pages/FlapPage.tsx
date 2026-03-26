@@ -37,7 +37,12 @@ const FlapPage: React.FC = () => {
     React.useEffect(() => {
         const fetchCotacao = async () => {
             try {
-                const response = await fetch('https://economia.awesomeapi.com.br/last/USD-BRL');
+                const response = await fetch('https://blobgpedbfdjweiyxbzu.supabase.co/functions/v1/cotacoes', {
+                    headers: {
+                        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJsb2JncGVkYmZkandlaXl4Ynp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MjE3NzQsImV4cCI6MjA4NzA5Nzc3NH0.j84fRavzFlfsxVma-f0axr1X8xw22grywqITifugI6g`,
+                        'Content-Type': 'application/json'
+                    }
+                });
                 const data = await response.json();
                 if (data && data.USDBRL && data.USDBRL.bid) {
                     const bid = parseFloat(data.USDBRL.bid);

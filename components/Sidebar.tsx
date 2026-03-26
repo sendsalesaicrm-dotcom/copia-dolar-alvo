@@ -77,7 +77,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                                 <NavLink to="/cofrinho" icon={<PiggyBank className="w-5 h-5" />}>Cofrinho</NavLink>
                             </li>
                             <li>
-                                <NavLink to="/meu-acessor" icon={<Bot className="w-5 h-5" />}>Meu Assessor</NavLink>
+                                <NavLink to="/meu-assessor" icon={<Bot className="w-5 h-5" />}>Meu Assessor</NavLink>
                             </li>
                             <li>
                             <NavLink to="/flap" icon={<Zap className="w-5 h-5" />}>Carteira Antifrágil</NavLink>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './src/components/ProtectedRoute';
 import { AuthRedirect } from './src/components/AuthRedirect'; // New import
 import { AppLayout } from './src/components/AppLayout';
@@ -17,7 +17,7 @@ import SuitabilityPage from './src/pages/SuitabilityPage';
 import FinancialGoalsPage from './src/pages/FinancialGoalsPage';
 import CofrinhoPage from './src/pages/CofrinhoPage';
 import AdminPage from './src/pages/AdminPage'; // New import
-import MeuAcessorPage from './src/pages/MeuAcessorPage';
+import MeuAssessorPage from './src/pages/MeuAssessorPage';
 import SuspendedPage from './src/pages/SuspendedPage';
 import FlapPage from './pages/FlapPage';
 import GastosPage from './src/pages/GastosPage';
@@ -125,15 +125,17 @@ const App: React.FC = () => {
             }
           />
           <Route
-            path="/meu-acessor"
+            path="/meu-assessor"
             element={
               <ProtectedRoute>
                 <AppLayout>
-                  <MeuAcessorPage />
+                  <MeuAssessorPage />
                 </AppLayout>
               </ProtectedRoute>
             }
           />
+          {/* Compatibility redirect: old typo */}
+          <Route path="/meu-acessor" element={<Navigate to="/meu-assessor" replace />} />
           <Route
             path="/flap"
             element={

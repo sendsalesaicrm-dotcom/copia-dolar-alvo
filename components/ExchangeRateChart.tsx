@@ -69,36 +69,44 @@ export const ExchangeRateChart: React.FC<ExchangeRateChartProps> = ({
         let values: number[] = [];
 
         if (range === '1d') {
-          // Intraday data from sequential endpoint
-          const response = await fetch(`https://economia.awesomeapi.com.br/${currency}/1000`);
-          const data = await response.json();
+          const response = await fetch('https://blobgpedbfdjweiyxbzu.supabase.co/functions/v1/cotacoes-historico', {
+            headers: {
+              'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJsb2JncGVkYmZkandlaXl4Ynp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MjE3NzQsImV4cCI6MjA4NzA5Nzc3NH0.j84fRavzFlfsxVma-f0axr1X8xw22grywqITifugI6g`,
+              'Content-Type': 'application/json'
+            }
+          });
+          const result = await response.json();
+          const data = Array.isArray(result) ? result : [];
 
           const sortedData = [...data].reverse();
-
-          // Filter for records from the last 12 hours
           const twelveHoursAgo = new Date();
           twelveHoursAgo.setHours(twelveHoursAgo.getHours() - 12);
-
           const filteredData = sortedData.filter((item: any) => {
             const itemDate = new Date(item.timestamp * 1000);
             return itemDate >= twelveHoursAgo;
           });
-
-          // If few data points for today (market just opened or weekend), show last ~100 points
           const finalData = filteredData.length > 5 ? filteredData : sortedData.slice(-100);
-
           labels = finalData.map((item: any) => {
             const date = new Date(item.timestamp * 1000);
             return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
           });
           values = finalData.map((item: any) => parseFloat(item.ask));
         } else {
-          // Historical daily data
           const selectedRange = ranges.find(r => r.value === range);
           const days = selectedRange ? selectedRange.days : 30;
-
-          const response = await fetch(`https://economia.awesomeapi.com.br/json/daily/${currency}/${days}`);
-          const data = await response.json();
+          const response = await fetch(`https://blobgpedbfdjweiyxbzu.supabase.co/functions/v1/cotacoes-historico?currency=${currency}&days=${days}`, {
+            headers: {
+              'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJsb2JncGVkYmZkandlaXl4Ynp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MjE3NzQsImV4cCI6MjA4NzA5Nzc3NH0.j84fRavzFlfsxVma-f0axr1X8xw22grywqITifugI6g`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (!response.ok) {
+            throw new Error('Edge function not available');
+          }
+          
+          const result = await response.json();
+          const data = Array.isArray(result) ? result : [];
 
           const sortedData = [...data].reverse();
           labels = sortedData.map((item: any) => {
@@ -127,6 +135,15 @@ export const ExchangeRateChart: React.FC<ExchangeRateChartProps> = ({
           } else {
             labels.push(newLabel);
             values.push(parseFloat(currentQuote.bid));
+          }
+        }
+
+        if (range !== '1d') {
+          const selectedRange = ranges.find(r => r.value === range);
+          const maxDays = selectedRange ? selectedRange.days : 30;
+          if (labels.length > maxDays) {
+            labels = labels.slice(-maxDays);
+            values = values.slice(-maxDays);
           }
         }
 
