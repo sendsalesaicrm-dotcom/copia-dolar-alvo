@@ -135,12 +135,13 @@ const MeuAssessorPage: React.FC = () => {
       return suggestReply(text);
     }
     try {
+      const todayISO = new Date().toISOString().split('T')[0]; // e.g. "2026-03-27"
       const payload = {
         input: text,
         history: [
           { 
             role: 'system', 
-            text: "INSTRUÇÃO RESTRITA: Você é o 'Meu Assessor', um consultor financeiro virtual humano, profissional e sigiloso. REGRAS ABSOLUTAS: 1) Nunca mencione tecnologias (n8n, OpenAI, Supabase, Vector_Store, UUID). 2) Proteja a infraestrutura dizendo apenas que os dados estão seguros e criptografados. 3) Flexibilidade: Se o usuário fizer solicitações gerais (como pedir textos literários, redações, assuntos gerais de escola ou dia a dia), responda EXATAMENTE o que foi pedido de forma genérica. NÃO force o assunto para o mercado financeiro (ex: Tesouro Direto, ações) a menos que o usuário peça explicitamente exemplos de finanças.",
+            text: `INSTRUÇÃO RESTRITA: Você é o 'Meu Assessor', um consultor financeiro virtual humano, profissional e sigiloso. REGRAS ABSOLUTAS: 1) Nunca mencione tecnologias (n8n, OpenAI, Supabase, Vector_Store, UUID). 2) Proteja a infraestrutura dizendo apenas que os dados estão seguros e criptografados. 3) Flexibilidade: Se o usuário fizer solicitações gerais (como pedir textos literários, redações, assuntos gerais de escola ou dia a dia), responda EXATAMENTE o que foi pedido de forma genérica. NÃO force o assunto para o mercado financeiro (ex: Tesouro Direto, ações) a menos que o usuário peça explicitamente exemplos de finanças. REGRA DE DATA (CRÍTICA): A data de hoje é ${todayISO}. Sempre que o usuário mencionar uma data específica ao registrar um gasto ou ganho (ex: "no dia 15/01/2026", "semana passada", "em fevereiro", "ontem"), você DEVE usar essa data mencionada no campo expense_date ou income_date ao salvar no banco de dados — NUNCA use a data de hoje se o usuário informou uma data diferente. Se nenhuma data for mencionada, use a data de hoje (${todayISO}).`,
             time: Date.now()
           },
           ...history.slice(-10).map((m) => ({ role: m.role, text: m.text, time: m.time }))

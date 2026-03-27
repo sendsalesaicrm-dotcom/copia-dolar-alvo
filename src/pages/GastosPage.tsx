@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { Plus, Trash2, TrendingDown, TrendingUp, Calendar, Wallet, X, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
+import { Plus, Trash2, TrendingDown, TrendingUp, Calendar, Wallet, X, ArrowUpCircle, ArrowDownCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { showError, showSuccess } from '../utils/toast';
@@ -23,6 +23,7 @@ interface Ganho {
   amount: number;
   category: string | null;
   description: string | null;
+  income_date: string;
   created_at: string;
 }
 
@@ -64,6 +65,31 @@ const GastosPage: React.FC = () => {
   const [chartTab, setChartTab] = useState<'saidas' | 'entradas'>('saidas');
   const [historyTab, setHistoryTab] = useState<'gastos' | 'entradas'>('gastos');
 
+  // Month filter
+  const todayD = new Date();
+  const [selectedMonth, setSelectedMonth] = useState(todayD.getMonth());
+  const [selectedYear, setSelectedYear] = useState(todayD.getFullYear());
+
+  const prevMonth = () => {
+    if (selectedMonth === 0) {
+      setSelectedMonth(11);
+      setSelectedYear(y => y - 1);
+    } else {
+      setSelectedMonth(m => m - 1);
+    }
+  };
+  const nextMonth = () => {
+    const isNow = selectedMonth === todayD.getMonth() && selectedYear === todayD.getFullYear();
+    if (isNow) return;
+    if (selectedMonth === 11) {
+      setSelectedMonth(0);
+      setSelectedYear(y => y + 1);
+    } else {
+      setSelectedMonth(m => m + 1);
+    }
+  };
+  const isCurrentMonth = selectedMonth === todayD.getMonth() && selectedYear === todayD.getFullYear();
+
   // Form state
   const [recordType, setRecordType] = useState<'saida' | 'entrada'>('saida');
   const [amount, setAmount] = useState('');
@@ -71,6 +97,7 @@ const GastosPage: React.FC = () => {
   const [incomeCategory, setIncomeCategory] = useState('Salário');
   const [description, setDescription] = useState('');
   const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split('T')[0]);
+  const [incomeDate, setIncomeDate] = useState(new Date().toISOString().split('T')[0]);
   const [saving, setSaving] = useState(false);
 
   const fetchExpenses = useCallback(async () => {
@@ -89,7 +116,7 @@ const GastosPage: React.FC = () => {
       .from('ganhos')
       .select('*')
       .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+      .order('income_date', { ascending: false });
     if (!error) setGanhos((data as Ganho[]) || []);
   }, [user]);
 
@@ -127,6 +154,7 @@ const GastosPage: React.FC = () => {
         amount: numAmount,
         category: incomeCategory,
         description: description.trim() || null,
+        income_date: incomeDate,
       });
       if (error) { showError('Erro ao salvar entrada: ' + error.message); }
       else { showSuccess('Entrada registrada!'); await fetchGanhos(); }
@@ -137,6 +165,7 @@ const GastosPage: React.FC = () => {
     setCategory('Alimentação');
     setIncomeCategory('Salário');
     setExpenseDate(new Date().toISOString().split('T')[0]);
+    setIncomeDate(new Date().toISOString().split('T')[0]);
     setShowForm(false);
     setSaving(false);
   };
@@ -160,7 +189,7 @@ const GastosPage: React.FC = () => {
     return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num);
   };
 
-  // Stats for current month
+  // Stats for current month (always today for the header)
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
@@ -168,17 +197,17 @@ const GastosPage: React.FC = () => {
   const monthExpenses = useMemo(
     () => expenses.filter(e => {
       const d = new Date(e.expense_date + 'T00:00:00');
-      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
     }),
-    [expenses, currentMonth, currentYear]
+    [expenses, selectedMonth, selectedYear]
   );
 
   const monthGanhos = useMemo(
     () => ganhos.filter(g => {
-      const d = new Date(g.created_at);
-      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      const d = new Date((g.income_date || g.created_at.split('T')[0]) + 'T00:00:00');
+      return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
     }),
-    [ganhos, currentMonth, currentYear]
+    [ganhos, selectedMonth, selectedYear]
   );
 
   const totalSaidas = useMemo(() => monthExpenses.reduce((s, e) => s + Number(e.amount), 0), [monthExpenses]);
@@ -201,7 +230,31 @@ const GastosPage: React.FC = () => {
     return Array.from(map.entries()).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
   }, [monthGanhos]);
 
-  const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+  const monthNamesFull = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+  // Monthly bar chart data — all months with data across all years
+  const monthlyChartData = useMemo(() => {
+    const map = new Map<string, { mes: string; Saídas: number; Entradas: number }>();
+    expenses.forEach(e => {
+      const d = new Date(e.expense_date + 'T00:00:00');
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const label = `${monthNames[d.getMonth()]}/${String(d.getFullYear()).slice(2)}`;
+      if (!map.has(key)) map.set(key, { mes: label, Saídas: 0, Entradas: 0 });
+      map.get(key)!.Saídas += Number(e.amount);
+    });
+    ganhos.forEach(g => {
+      const dateStr = (g.income_date || g.created_at.split('T')[0]);
+      const d = new Date(dateStr + 'T00:00:00');
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const label = `${monthNames[d.getMonth()]}/${String(d.getFullYear()).slice(2)}`;
+      if (!map.has(key)) map.set(key, { mes: label, Saídas: 0, Entradas: 0 });
+      map.get(key)!.Entradas += Number(g.amount);
+    });
+    return Array.from(map.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([, v]) => v);
+  }, [expenses, ganhos]);
 
   const currentCategories = recordType === 'saida' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
 
@@ -213,7 +266,7 @@ const GastosPage: React.FC = () => {
           <h1 className={`text-3xl font-black tracking-tight ${theme === 'dark' ? 'text-white' : 'text-foreground'}`}>
             Minha Carteira
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">{monthNames[currentMonth]} de {currentYear}</p>
+          <p className="text-sm text-muted-foreground mt-1">{monthNamesFull[currentMonth]} de {currentYear}</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
@@ -254,20 +307,61 @@ const GastosPage: React.FC = () => {
         </motion.div>
       </div>
 
+      {/* Monthly History Chart */}
+      {monthlyChartData.length > 1 && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} className="bg-card rounded-2xl p-6 border border-border shadow-sm mb-8">
+          <div className="flex items-center gap-2 mb-5">
+            <div className="p-2 rounded-lg bg-primary/10"><Calendar className="w-4 h-4 text-primary" /></div>
+            <div>
+              <h2 className="text-sm font-bold text-card-foreground">Histórico Mensal</h2>
+              <p className="text-xs text-muted-foreground">Entradas vs Saídas por mês</p>
+            </div>
+          </div>
+          <div style={{ height: 220 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={monthlyChartData} barCategoryGap="30%" barGap={4}>
+                <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.08} vertical={false} />
+                <XAxis dataKey="mes" tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.6 }} axisLine={false} tickLine={false} />
+                <YAxis tickFormatter={(v: number) => v >= 1000 ? `${(v/1000).toFixed(0)}k` : String(v)} tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.6 }} axisLine={false} tickLine={false} width={45} />
+                <Tooltip
+                  formatter={(value: number, name: string) => [new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value), name]}
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.2)', fontSize: '12px', backgroundColor: 'var(--card)' }}
+                />
+                <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }} />
+                <Bar dataKey="Entradas" fill="#10b981" radius={[6, 6, 0, 0]} maxBarSize={40} />
+                <Bar dataKey="Saídas" fill="#ef4444" radius={[6, 6, 0, 0]} maxBarSize={40} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
+      )}
+
       {/* Content */}
       <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-8">
         {/* Chart Panel */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card rounded-2xl p-6 border border-border shadow-sm">
+          {/* Month navigator */}
+          <div className="flex items-center justify-between mb-3">
+            <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-xs font-bold text-card-foreground">
+              {monthNamesFull[selectedMonth]} {selectedYear}
+            </span>
+            <button onClick={nextMonth} disabled={isCurrentMonth} className={`p-1.5 rounded-lg transition-colors ${isCurrentMonth ? 'opacity-30 cursor-not-allowed' : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground'}`}>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
           {/* Chart Tabs */}
           <div className="flex gap-2 mb-4">
             <button
-              onClick={() => setChartTab('saidas')}
+              onClick={() => { setChartTab('saidas'); setHistoryTab('gastos'); }}
               className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${chartTab === 'saidas' ? 'bg-red-500 text-white' : 'bg-muted/30 text-muted-foreground hover:bg-muted/50'}`}
             >
               Por Saídas
             </button>
             <button
-              onClick={() => setChartTab('entradas')}
+              onClick={() => { setChartTab('entradas'); setHistoryTab('entradas'); }}
               className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${chartTab === 'entradas' ? 'bg-emerald-500 text-white' : 'bg-muted/30 text-muted-foreground hover:bg-muted/50'}`}
             >
               Por Entradas
@@ -339,19 +433,34 @@ const GastosPage: React.FC = () => {
 
         {/* History Panel */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-border flex gap-2">
-            <button
-              onClick={() => setHistoryTab('gastos')}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${historyTab === 'gastos' ? 'bg-red-500 text-white' : 'bg-muted/30 text-muted-foreground hover:bg-muted/50'}`}
-            >
-              Saídas
-            </button>
-            <button
-              onClick={() => setHistoryTab('entradas')}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${historyTab === 'entradas' ? 'bg-emerald-500 text-white' : 'bg-muted/30 text-muted-foreground hover:bg-muted/50'}`}
-            >
-              Entradas
-            </button>
+          <div className="px-6 py-4 border-b border-border">
+            {/* Month navigator */}
+            <div className="flex items-center justify-between mb-3">
+              <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors">
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="text-xs font-bold text-card-foreground">
+                {monthNamesFull[selectedMonth]} {selectedYear}
+              </span>
+              <button onClick={nextMonth} disabled={isCurrentMonth} className={`p-1.5 rounded-lg transition-colors ${isCurrentMonth ? 'opacity-30 cursor-not-allowed' : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground'}`}>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+            {/* History Tabs */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setHistoryTab('gastos'); setChartTab('saidas'); }}
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${historyTab === 'gastos' ? 'bg-red-500 text-white' : 'bg-muted/30 text-muted-foreground hover:bg-muted/50'}`}
+              >
+                Saídas
+              </button>
+              <button
+                onClick={() => { setHistoryTab('entradas'); setChartTab('entradas'); }}
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${historyTab === 'entradas' ? 'bg-emerald-500 text-white' : 'bg-muted/30 text-muted-foreground hover:bg-muted/50'}`}
+              >
+                Entradas
+              </button>
+            </div>
           </div>
 
           {loading ? (
@@ -359,14 +468,14 @@ const GastosPage: React.FC = () => {
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
             </div>
           ) : historyTab === 'gastos' ? (
-            expenses.length === 0 ? (
+            monthExpenses.length === 0 ? (
               <div className="flex flex-col items-center justify-center p-12 text-center">
                 <TrendingDown className="w-10 h-10 text-muted-foreground/30 mb-3" />
-                <p className="text-sm text-muted-foreground">Nenhuma saída registrada.</p>
+                <p className="text-sm text-muted-foreground">Nenhuma saída em {monthNamesFull[selectedMonth]} {selectedYear}.</p>
               </div>
             ) : (
               <div className="divide-y divide-border max-h-[500px] overflow-y-auto">
-                {expenses.map((e) => (
+                {monthExpenses.map((e) => (
                   <div key={e.id} className="flex items-center justify-between px-6 py-3 hover:bg-muted/30 transition-colors group">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: getCategoryColor(e.category, EXPENSE_CATEGORIES) }} />
@@ -386,20 +495,20 @@ const GastosPage: React.FC = () => {
               </div>
             )
           ) : (
-            ganhos.length === 0 ? (
+            monthGanhos.length === 0 ? (
               <div className="flex flex-col items-center justify-center p-12 text-center">
                 <TrendingUp className="w-10 h-10 text-muted-foreground/30 mb-3" />
-                <p className="text-sm text-muted-foreground">Nenhuma entrada registrada.<br />Fale com o Meu Assessor para registrar!</p>
+                <p className="text-sm text-muted-foreground">Nenhuma entrada em {monthNamesFull[selectedMonth]} {selectedYear}.</p>
               </div>
             ) : (
               <div className="divide-y divide-border max-h-[500px] overflow-y-auto">
-                {ganhos.map((g) => (
+                {monthGanhos.map((g) => (
                   <div key={g.id} className="flex items-center justify-between px-6 py-3 hover:bg-muted/30 transition-colors group">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: getCategoryColor(g.category || 'Outros', INCOME_CATEGORIES) }} />
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-card-foreground truncate">{g.description || g.category || 'Entrada'}</p>
-                        <p className="text-xs text-muted-foreground">{g.category || 'Outros'} · {new Date(g.created_at).toLocaleDateString('pt-BR')}</p>
+                        <p className="text-xs text-muted-foreground">{g.category || 'Outros'} · {new Date((g.income_date || g.created_at.split('T')[0]) + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 flex-shrink-0">
@@ -498,18 +607,16 @@ const GastosPage: React.FC = () => {
                   />
                 </div>
 
-                {/* Date (only for expenses) */}
-                {recordType === 'saida' && (
-                  <div>
-                    <label className="block text-[10px] uppercase tracking-wider font-bold text-foreground/50 mb-1.5">Data</label>
-                    <input
-                      type="date"
-                      value={expenseDate}
-                      onChange={e => setExpenseDate(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                    />
-                  </div>
-                )}
+                {/* Date field for both types */}
+                <div>
+                  <label className="block text-[10px] uppercase tracking-wider font-bold text-foreground/50 mb-1.5">Data</label>
+                  <input
+                    type="date"
+                    value={recordType === 'saida' ? expenseDate : incomeDate}
+                    onChange={e => recordType === 'saida' ? setExpenseDate(e.target.value) : setIncomeDate(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
 
                 {/* Submit */}
                 <button
