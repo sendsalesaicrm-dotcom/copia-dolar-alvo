@@ -39,12 +39,12 @@ const EXPENSE_CATEGORIES = [
 ];
 
 const INCOME_CATEGORIES = [
-  { name: 'Salário', color: '#10b981' },
+  { name: 'Salário', color: '#0EFC4A' },
   { name: 'Freelance', color: '#10b957' },
-  { name: 'Investimentos', color: '#10b973' },
+  { name: 'Investimentos', color: '#07543B' },
   { name: 'Presente', color: '#10b98f' },
   { name: 'Venda', color: '#10b9ab' },
-  { name: 'Outros', color: '#10b965' },
+  { name: 'Outros', color: '#085C32' },
 ];
 
 const getCategoryColor = (cat: string, categories: { name: string; color: string }[]) =>
