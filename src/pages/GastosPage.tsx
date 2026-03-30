@@ -29,22 +29,22 @@ interface Ganho {
 
 const EXPENSE_CATEGORIES = [
   { name: 'Alimentação', color: '#ef6037' },
-  { name: 'Transporte', color: '#3b82f6' },
-  { name: 'Lazer', color: '#8b5cf6' },
-  { name: 'Moradia', color: '#10b981' },
-  { name: 'Saúde', color: '#f59e0b' },
-  { name: 'Educação', color: '#6366f1' },
-  { name: 'Compras', color: '#ec4899' },
-  { name: 'Outros', color: '#6b7280' },
+  { name: 'Transporte', color: '#ef390f' },
+  { name: 'Lazer', color: '#ef4b0f' },
+  { name: 'Moradia', color: '#ef5e0f' },
+  { name: 'Saúde', color: '#ef710f' },
+  { name: 'Educação', color: '#ef830f' },
+  { name: 'Compras', color: '#ef960f' },
+  { name: 'Outros', color: '#ef260f' },
 ];
 
 const INCOME_CATEGORIES = [
   { name: 'Salário', color: '#10b981' },
-  { name: 'Freelance', color: '#3b82f6' },
-  { name: 'Investimentos', color: '#6366f1' },
-  { name: 'Presente', color: '#ec4899' },
-  { name: 'Venda', color: '#f59e0b' },
-  { name: 'Outros', color: '#6b7280' },
+  { name: 'Freelance', color: '#10b957' },
+  { name: 'Investimentos', color: '#10b973' },
+  { name: 'Presente', color: '#10b98f' },
+  { name: 'Venda', color: '#10b9ab' },
+  { name: 'Outros', color: '#10b965' },
 ];
 
 const getCategoryColor = (cat: string, categories: { name: string; color: string }[]) =>
