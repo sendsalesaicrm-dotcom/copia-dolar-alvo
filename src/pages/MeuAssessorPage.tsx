@@ -69,6 +69,9 @@ const MeuAssessorPage: React.FC = () => {
   const [isListening, setIsListening] = useState(false);
   const [isExpenseMode, setIsExpenseMode] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const handleSendRef = useRef<any>(null);
+  const isExpenseModeRef = useRef(false);
+  isExpenseModeRef.current = isExpenseMode; // sync on every render
   const speechSupported = typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
 
   const toggleListening = () => {
@@ -105,6 +108,16 @@ const MeuAssessorPage: React.FC = () => {
     recognition.onend = () => {
       setIsListening(false);
       recognitionRef.current = null;
+      // Auto-send when the user stops speaking
+      if (finalTranscript.trim()) {
+        if (isExpenseModeRef.current) {
+          const prompt = `Registre este gasto financeiro na minha conta: ${finalTranscript.trim()}`;
+          setIsExpenseMode(false);
+          handleSendRef.current?.(prompt);
+        } else {
+          handleSendRef.current?.(finalTranscript.trim());
+        }
+      }
     };
 
     recognition.onerror = (event: any) => {
@@ -518,6 +531,9 @@ const MeuAssessorPage: React.FC = () => {
     }
     setSending(false);
   };
+
+  // Keep ref always pointing to latest handleSend (avoids stale closures in onend)
+  handleSendRef.current = handleSend;
 
   const onKeyDown: React.KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
