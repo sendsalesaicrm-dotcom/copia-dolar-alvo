@@ -237,8 +237,15 @@ const MeuAssessorPage: React.FC = () => {
   };
 
   const saveConversations = (list: Conversation[]) => {
+    if (user?.id) {
+      // Usuário logado: Supabase é a fonte de verdade — limpa o localStorage para economizar espaço
+      try { localStorage.removeItem(storageKey); } catch {}
+      return;
+    }
+    // Usuário anônimo: mantém só as últimas 10 conversas no localStorage
     try {
-      localStorage.setItem(storageKey, JSON.stringify(list));
+      const trimmed = list.slice(0, 10);
+      localStorage.setItem(storageKey, JSON.stringify(trimmed));
     } catch {
       // ignore storage errors
     }
