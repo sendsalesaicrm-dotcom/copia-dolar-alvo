@@ -449,13 +449,13 @@ const GastosPage: React.FC = () => {
             {/* History Tabs */}
             <div className="flex gap-2">
               <button
-                onClick={() => setHistoryTab('gastos')}
+                onClick={() => { setHistoryTab('gastos'); setChartTab('saidas'); }}
                 className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${historyTab === 'gastos' ? 'bg-red-500 text-white' : 'bg-muted/30 text-muted-foreground hover:bg-muted/50'}`}
               >
                 Saídas
               </button>
               <button
-                onClick={() => setHistoryTab('entradas')}
+                onClick={() => { setHistoryTab('entradas'); setChartTab('entradas'); }}
                 className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${historyTab === 'entradas' ? 'bg-emerald-500 text-white' : 'bg-muted/30 text-muted-foreground hover:bg-muted/50'}`}
               >
                 Entradas
