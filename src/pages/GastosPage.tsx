@@ -41,7 +41,7 @@ const EXPENSE_CATEGORIES = [
 const INCOME_CATEGORIES = [
   { name: 'Salário', color: '#0EFC4A' },
   { name: 'Freelance', color: '#10b957' },
-  { name: 'Investimentos', color: '#07543B' },
+  { name: 'Investimentos', color: '#02F7ED' },
   { name: 'Presente', color: '#10b98f' },
   { name: 'Venda', color: '#10b9ab' },
   { name: 'Outros', color: '#085C32' },
