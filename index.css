@@ -321,3 +321,13 @@ select {
 .animate-zoom-in {
   animation: zoomIn 0.2s ease-out;
 }
+
+/* ========= RECHARTS: remove outline de foco ========= */
+.recharts-wrapper,
+.recharts-surface,
+.recharts-wrapper:focus,
+.recharts-surface:focus,
+.recharts-wrapper:focus-visible,
+.recharts-surface:focus-visible {
+  outline: none !important;
+}
