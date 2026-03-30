@@ -233,28 +233,29 @@ const GastosPage: React.FC = () => {
   const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
   const monthNamesFull = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
-  // Monthly bar chart data — all months with data across all years
+  // Monthly bar chart data — filtered by selectedYear, always 12 months
   const monthlyChartData = useMemo(() => {
-    const map = new Map<string, { mes: string; Saídas: number; Entradas: number }>();
+    const data = monthNames.map((mes) => ({ mes, 'Saídas': 0, Entradas: 0 }));
     expenses.forEach(e => {
       const d = new Date(e.expense_date + 'T00:00:00');
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      const label = `${monthNames[d.getMonth()]}/${String(d.getFullYear()).slice(2)}`;
-      if (!map.has(key)) map.set(key, { mes: label, Saídas: 0, Entradas: 0 });
-      map.get(key)!.Saídas += Number(e.amount);
+      if (d.getFullYear() === selectedYear) {
+        data[d.getMonth()]['Saídas'] += Number(e.amount);
+      }
     });
     ganhos.forEach(g => {
       const dateStr = (g.income_date || g.created_at.split('T')[0]);
       const d = new Date(dateStr + 'T00:00:00');
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      const label = `${monthNames[d.getMonth()]}/${String(d.getFullYear()).slice(2)}`;
-      if (!map.has(key)) map.set(key, { mes: label, Saídas: 0, Entradas: 0 });
-      map.get(key)!.Entradas += Number(g.amount);
+      if (d.getFullYear() === selectedYear) {
+        data[d.getMonth()].Entradas += Number(g.amount);
+      }
     });
-    return Array.from(map.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([, v]) => v);
-  }, [expenses, ganhos]);
+    return data;
+  }, [expenses, ganhos, selectedYear]);
+
+  const hasYearData = useMemo(
+    () => monthlyChartData.some(d => d['Saídas'] > 0 || d.Entradas > 0),
+    [monthlyChartData]
+  );
 
   const currentCategories = recordType === 'saida' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
 
@@ -308,13 +309,13 @@ const GastosPage: React.FC = () => {
       </div>
 
       {/* Monthly History Chart */}
-      {monthlyChartData.length > 1 && (
+      {hasYearData && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} className="bg-card rounded-2xl p-6 border border-border shadow-sm mb-8">
           <div className="flex items-center gap-2 mb-5">
             <div className="p-2 rounded-lg bg-primary/10"><Calendar className="w-4 h-4 text-primary" /></div>
             <div>
               <h2 className="text-sm font-bold text-card-foreground">Histórico Mensal</h2>
-              <p className="text-xs text-muted-foreground">Entradas vs Saídas por mês</p>
+              <p className="text-xs text-muted-foreground">Entradas vs Saídas — {selectedYear}</p>
             </div>
           </div>
           <div style={{ height: 220 }}>
