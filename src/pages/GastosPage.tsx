@@ -310,7 +310,7 @@ const GastosPage: React.FC = () => {
 
       {/* Monthly History Chart */}
       {hasYearData && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} className="bg-card rounded-2xl p-6 border border-border shadow-sm mb-8">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} className="bg-card rounded-2xl p-6 mb-8">
           <div className="flex items-center gap-2 mb-5">
             <div className="p-2 rounded-lg bg-primary/10"><Calendar className="w-4 h-4 text-primary" /></div>
             <div>
