@@ -1,138 +1,231 @@
 import { SimulationInputs, AntifragileProjectionResult, AntifragileAnnualData } from '../../types';
 
-interface Deposit {
-    amount: number;
-    monthsAged: number; // Quantos meses o dinheiro ficou investido
+export interface DepositLote {
+    principal: number;
+    grossValue: number;
+    monthIn: number;
 }
 
 /**
- * Calcula o Imposto de Renda Regressivo (FIFO)
- * Com base na idade dos aportes
+ * Retorna a alíquota da Tabela Regressiva de IR baseada em meses (1 mês = ~30 dias)
+ * Até 180 dias (6 meses): 22,5%
+ * 181 a 360 dias (12 meses): 20%
+ * 361 a 720 dias (24 meses): 17,5%
+ * Acima de 720 dias: 15%
  */
-export function calculateRegressiveTax(deposits: Deposit[], currentTotalBalance: number): number {
-    const totalInvested = deposits.reduce((acc, dep) => acc + dep.amount, 0);
-    const totalProfit = Math.max(0, currentTotalBalance - totalInvested);
-
-    if (totalProfit <= 0) return 0;
-
-    // Calcula o lucro proporcional de cada aporte (simplificado para o escopo)
-    let totalTax = 0;
-
-    deposits.forEach(dep => {
-        // Proporção do lucro que este aporte gerou
-        const depositProfit = totalProfit * (dep.amount / totalInvested);
-
-        let taxRate = 0.225; // Até 180 dias (6 meses)
-        if (dep.monthsAged > 6 && dep.monthsAged <= 12) taxRate = 0.20;
-        else if (dep.monthsAged > 12 && dep.monthsAged <= 24) taxRate = 0.175;
-        else if (dep.monthsAged > 24) taxRate = 0.15; // Acima de 720 dias
-
-        totalTax += depositProfit * taxRate;
-    });
-
-    return totalTax;
+export function getIRRate(monthsAged: number): number {
+    if (monthsAged <= 6) return 0.225;
+    if (monthsAged <= 12) return 0.20;
+    if (monthsAged <= 24) return 0.175;
+    return 0.15;
 }
 
+/**
+ * Calcula a posição exata da carteira somando os lotes e calculando o IR proporcional a idade de cada lote.
+ */
+export function getPortfolioValuation(deposits: DepositLote[], currentAbsoluteMonth: number) {
+    let totalPrincipal = 0;
+    let totalGross = 0;
+    let totalNet = 0;
+
+    for (const dep of deposits) {
+        if (dep.grossValue <= 0) continue; // lote completamente sacado
+
+        const age = currentAbsoluteMonth - dep.monthIn + 1;
+        const profit = dep.grossValue - dep.principal;
+        const irRate = getIRRate(age);
+        
+        const netValue = dep.principal + Math.max(0, profit * (1 - irRate));
+        
+        totalPrincipal += dep.principal;
+        totalGross += dep.grossValue;
+        totalNet += netValue;
+    }
+
+    return { totalPrincipal, totalGross, totalNet };
+}
+
+export interface SimpleMonthlyData {
+    month: number;
+    initialValue: number;
+    valuePlusContribution: number;
+    grossValue: number;
+    accumulatedYield: number;
+    netValue: number;
+}
+
+export interface SimpleProjectionResult {
+    finalValue: number;
+    totalInvested: number;
+    totalProfit: number;
+    yield: number;
+    monthlyData: SimpleMonthlyData[];
+}
+
+/**
+ * Simula a carteira tradicional (sem dolarização), mantendo um histórico preciso de IR via FIFO
+ */
+export function simulateSimplePortfolio(inputs: SimulationInputs): SimpleProjectionResult {
+    const totalMonths = inputs.years * 12;
+    const monthlyRateBrl = Math.pow(1 + inputs.annualRateBrl, 1 / 12) - 1;
+    
+    const deposits: DepositLote[] = [];
+    const monthlyData: SimpleMonthlyData[] = [];
+    
+    if (inputs.initialAmountBrl > 0) {
+        deposits.push({ principal: inputs.initialAmountBrl, grossValue: inputs.initialAmountBrl, monthIn: 1 });
+    }
+    
+    for (let absoluteMonth = 1; absoluteMonth <= totalMonths; absoluteMonth++) {
+        const initialValue = deposits.reduce((sum, dep) => sum + dep.grossValue, 0);
+        
+        const currentAporte = absoluteMonth === 1 ? 0 : inputs.monthlyContributionBrl;
+        if (currentAporte > 0) {
+            deposits.push({ principal: currentAporte, grossValue: currentAporte, monthIn: absoluteMonth });
+        }
+        
+        const valuePlusContribution = initialValue + currentAporte;
+        
+        // Rende o mês para todos os lotes ativos
+        for (const dep of deposits) {
+            dep.grossValue *= (1 + monthlyRateBrl);
+        }
+        
+        // Calculo líquido da carteira após o rendimento deste mês
+        const valuationEnd = getPortfolioValuation(deposits, absoluteMonth);
+        
+        monthlyData.push({
+            month: absoluteMonth,
+            initialValue: initialValue,
+            valuePlusContribution: valuePlusContribution,
+            grossValue: valuationEnd.totalGross,
+            accumulatedYield: ((valuationEnd.totalGross / valuationEnd.totalPrincipal) - 1) * 100,
+            netValue: valuationEnd.totalNet
+        });
+    }
+    
+    const finalValuation = getPortfolioValuation(deposits, totalMonths);
+    
+    return {
+        finalValue: finalValuation.totalNet,
+        totalInvested: finalValuation.totalPrincipal,
+        totalProfit: finalValuation.totalNet - finalValuation.totalPrincipal,
+        yield: ((finalValuation.totalNet / finalValuation.totalPrincipal) - 1) * 100,
+        monthlyData
+    };
+}
+
+/**
+ * Simula a carteira Antifrágil (BRL + USD) extraindo ganhos usando FIFO
+ */
 export function simulateAntifragilePortfolio(inputs: SimulationInputs): AntifragileProjectionResult {
-    let currentGrossBalanceBrl = inputs.initialAmountBrl;
     let accumulatedUsd = 0;
     let currentDollarRate = inputs.currentDollarRate;
-
-    const annualData: AntifragileAnnualData[] = [];
     const monthlyRateBrl = Math.pow(1 + inputs.annualRateBrl, 1 / 12) - 1;
-
-    let totalCashInvested = inputs.initialAmountBrl;
-
-    // A tabela Regressiva de IR baseada em meses 
-    const getApparentIRRate = (month: number) => {
-        if (month <= 6) return 0.225;
-        if (month <= 12) return 0.20;
-        if (month <= 23) return 0.175;
-        return 0.15;
-    };
+    
+    const deposits: DepositLote[] = [];
+    const annualData: AntifragileAnnualData[] = [];
+    
+    if (inputs.initialAmountBrl > 0) {
+        deposits.push({ principal: inputs.initialAmountBrl, grossValue: inputs.initialAmountBrl, monthIn: 1 });
+    }
 
     for (let year = 1; year <= inputs.years; year++) {
-        const startOfYearBalance = currentGrossBalanceBrl;
-        const startOfYearCashInvested = totalCashInvested;
-
-        // Simula os 12 meses do ano
+        // Obter Patrimônio Líquido Real ANTES de começar os meses deste ano
+        // Se year == 1, valuation do mês 0 (tudo 0)
+        const startOfYearValuation = getPortfolioValuation(deposits, ((year - 1) * 12));
+        const startOfYearNet = startOfYearValuation.totalNet;
+        let principalInjectedThisYear = 0;
+        
+        // Simular os 12 meses para engordar o BRL
         for (let month = 1; month <= 12; month++) {
             const absoluteMonth = ((year - 1) * 12) + month;
-
-            // Mês 1 não tem aporte extra
+            
             const currentAporte = absoluteMonth === 1 ? 0 : inputs.monthlyContributionBrl;
-
-            const valueWithAporte = currentGrossBalanceBrl + currentAporte;
-
-            // Juros compostos mensais
-            currentGrossBalanceBrl = valueWithAporte * (1 + monthlyRateBrl);
-
-            totalCashInvested += currentAporte;
+            if (currentAporte > 0) {
+                deposits.push({ principal: currentAporte, grossValue: currentAporte, monthIn: absoluteMonth });
+                principalInjectedThisYear += currentAporte;
+            }
+            
+            // Render
+            for (const dep of deposits) {
+                dep.grossValue *= (1 + monthlyRateBrl);
+            }
         }
-
-        // --- Mecânica de Dolarização Anual (Fim do ano) ---
-        // 1. Calcula o Lucro Bruto e Líquido Acumulado Total se fizesse o saque global agora
-        const totalGrossProfit = currentGrossBalanceBrl - totalCashInvested;
-        const irRate = getApparentIRRate(year * 12);
-        const totalNetProfit = totalGrossProfit * (1 - irRate);
-        const hypotheticalFinalBrl = totalCashInvested + totalNetProfit;
-
-        // O Lucro Líquido Realizado SOMENTE neste ano
-        // (Isso impede sacar de lucros já sacados ou contabilizados no passado)
-        const yearGrossGrowth = currentGrossBalanceBrl - startOfYearBalance - (totalCashInvested - startOfYearCashInvested);
-        const yearNetGrowth = yearGrossGrowth * (1 - irRate);
-
+        
+        // Patrimônio do Fim do Ano ANTES do saque antifrágil
+        const endOfYearAbsoluteMonth = year * 12;
+        const preExtractionValuation = getPortfolioValuation(deposits, endOfYearAbsoluteMonth);
+        const preExtractionNet = preExtractionValuation.totalNet;
+        
+        // A Dolarização recai sobre o CRESCIMENTO LÍQUIDO PURAMENTE DESTE ANO (Descontado todo capital aportado)
+        const yearNetGrowth = preExtractionNet - (startOfYearNet + principalInjectedThisYear);
         let extractedForDollar = 0;
-
+        
         if (yearNetGrowth > 0) {
-            // 3. Aplica a Porcentagem de Dolarização sobre o Lucro Líquido gerado no ano
             extractedForDollar = yearNetGrowth * inputs.dollarizationPercentage;
-
-            // Retira a parte bruta equivalente da carteira
-            // Para poder sacar X liquido, e assumindo que o IR já incidiu no X bruto "imaginário" correspondente:
-            // A redução no saldo investido tira o peso. Para ficar exato com a expectativa do usuário (50% do lucro líquido gerado):
-            // O usuário visualiza extrair do saldo final, então vamos subtrair o valor sacado do balanço bruto corrente.
-            const grossExtraction = extractedForDollar / (1 - irRate);
-            currentGrossBalanceBrl -= grossExtraction;
-
-            // Converte o montante em BRL sacado para USD na cotação projetada
+            let amountToExtractNet = extractedForDollar;
+            
+            // ----- Tira o valor líquido alvo da corretora usando fila FIFO ------
+            for (let i = 0; i < deposits.length && amountToExtractNet > 0; i++) {
+                const dep = deposits[i];
+                if (dep.grossValue <= 0) continue;
+                
+                const age = endOfYearAbsoluteMonth - dep.monthIn + 1;
+                const irRate = getIRRate(age);
+                const profit = dep.grossValue - dep.principal;
+                const availableNet = dep.principal + Math.max(0, profit * (1 - irRate));
+                
+                if (availableNet <= 0) continue;
+                
+                if (availableNet <= amountToExtractNet) {
+                    // Saca tudo desse lote (Esgotou)
+                    amountToExtractNet -= availableNet;
+                    dep.principal = 0;
+                    dep.grossValue = 0;
+                } else {
+                    // Saca uma fração percentual do lote, exaurindo o target
+                    const fractionToConsume = amountToExtractNet / availableNet;
+                    amountToExtractNet = 0; // zeramos o alvo
+                    
+                    dep.principal -= dep.principal * fractionToConsume;
+                    dep.grossValue -= dep.grossValue * fractionToConsume;
+                }
+            }
+            
+            // Converte os reais líquidos p/ Dólar
             const dollarsBought = extractedForDollar / currentDollarRate;
             accumulatedUsd += dollarsBought;
         }
-
-        // === Aplica Rendimento e Apreciação Cambial Internacional ===
-        // (Rendimentos em Dólar e valorização cambial ao final do ano)
+        
+        // ----- Rende o Patrimônio Global (Efeito Antifrágil) -----
         if (accumulatedUsd > 0) {
-            accumulatedUsd = accumulatedUsd * (1 + inputs.annualRateUsd);
-            currentDollarRate = currentDollarRate * (1 + inputs.dollarAppreciationRate);
+            // Conta gringa rendeu
+            accumulatedUsd *= (1 + inputs.annualRateUsd);
+            // Dólar valorizou
+            currentDollarRate *= (1 + inputs.dollarAppreciationRate);
         }
-
-        // Para o registro final da tabela deste ano, qual é o saldo real LÍQUIDO neste instante em BRL?
-        // (O saldo que o cara bateria o olho e veria na conta)
-        const currentTotalGrossProfit = currentGrossBalanceBrl - totalCashInvested;
-        const currentNetBalanceBrl = totalCashInvested + (currentTotalGrossProfit * (1 - irRate));
-
-        // Registra os dados do ano para reportar de volta
+        
+        // Saldo Final BRL DEPOIS do Saque
+        const postExtractionValuation = getPortfolioValuation(deposits, endOfYearAbsoluteMonth);
+        
         annualData.push({
             year,
-            balanceBrl: currentNetBalanceBrl, // Equivalente na visão tradicional ao `finalNet` do simulador simples
+            balanceBrl: postExtractionValuation.totalNet,
             balanceUsd: accumulatedUsd,
             extractedForDollarization: extractedForDollar,
-            totalInvestedBrl: totalCashInvested,
-            netProfitBrl: totalNetProfit, // Como o user citou: os 27k antes do saque. Esse é o Liquid Profit puro.
+            totalInvestedBrl: postExtractionValuation.totalPrincipal,
+            netProfitBrl: postExtractionValuation.totalNet - postExtractionValuation.totalPrincipal
         });
     }
-
-    // Calcula os saldos da linha de chegada 
-    const finalIRRate = getApparentIRRate(inputs.years * 12);
-    const finalGrossProfit = currentGrossBalanceBrl - totalCashInvested;
-    const finalNetBalanceBrl = totalCashInvested + (finalGrossProfit * (1 - finalIRRate));
-
-    // Visão Tripla no Resultado Final
+    
+    // Calcula o saldo final final
+    const finalValuation = getPortfolioValuation(deposits, inputs.years * 12);
+    
     return {
-        finalPatrimonyBrl: finalNetBalanceBrl,
+        finalPatrimonyBrl: finalValuation.totalNet,
         finalPatrimonyUsd: accumulatedUsd,
-        equivalentTotalBrl: finalNetBalanceBrl + (accumulatedUsd * currentDollarRate),
+        equivalentTotalBrl: finalValuation.totalNet + (accumulatedUsd * currentDollarRate),
         annualData
     };
 }

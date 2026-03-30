@@ -3,7 +3,7 @@ import { TrendingUp, ArrowUpRight, ShieldCheck, Globe, DollarSign } from 'lucide
 import { useTheme } from '../context/ThemeContext';
 import { FlapEvolutionTable } from './FlapEvolutionTable';
 import { AntifragileEvolutionTable } from './AntifragileEvolutionTable';
-import { simulateAntifragilePortfolio } from '../utils/finance';
+import { simulateAntifragilePortfolio, simulateSimplePortfolio } from '../utils/finance';
 
 interface FlapProps {
     initialInvestment: number;
@@ -40,56 +40,17 @@ export const FlapComparison: React.FC<FlapProps> = ({
 
     // --- Simulação 1: Apenas BRL ---
     const projection = useMemo(() => {
-        const totalMonths = (years || 1) * 12;
-        const monthlyRate = Math.pow(1 + cdiAnnual, 1 / 12) - 1;
-
-        let currentGrossBalance = initialInvestment;
-        const monthlyData: FlapMonthlyData[] = [];
-
-        const getIRRate = (month: number) => {
-            if (month <= 6) return 0.225;
-            if (month <= 12) return 0.20;
-            if (month <= 23) return 0.175;
-            return 0.15;
-        };
-
-        for (let i = 1; i <= totalMonths; i++) {
-            const initialOfMonth = currentGrossBalance;
-            const currentAporte = i === 1 ? 0 : monthlyContribution;
-            const valueWithAporte = initialOfMonth + currentAporte;
-
-            const grossValueAtEnd = valueWithAporte * (1 + monthlyRate);
-            const totalCashInvested = initialInvestment + ((i - 1) * monthlyContribution);
-
-            const totalGrossProfit = grossValueAtEnd - totalCashInvested;
-            const irRate = getIRRate(i);
-            const netBalanceSnapshot = totalCashInvested + (totalGrossProfit * (1 - irRate));
-
-            monthlyData.push({
-                month: i,
-                initialValue: initialOfMonth,
-                valuePlusContribution: valueWithAporte,
-                grossValue: grossValueAtEnd,
-                accumulatedYield: ((grossValueAtEnd / totalCashInvested) - 1) * 100,
-                netValue: netBalanceSnapshot
-            });
-
-            currentGrossBalance = grossValueAtEnd;
-        }
-
-        const totalInvestedFinal = initialInvestment + ((totalMonths - 1) * monthlyContribution);
-        const finalGross = currentGrossBalance;
-        const finalIR = getIRRate(totalMonths);
-        const finalNet = totalInvestedFinal + ((finalGross - totalInvestedFinal) * (1 - finalIR));
-
-        return {
-            finalValue: finalNet,
-            totalInvested: totalInvestedFinal,
-            totalProfit: finalNet - totalInvestedFinal,
-            yield: ((finalNet / totalInvestedFinal) - 1) * 100,
-            monthlyData
-        };
-    }, [initialInvestment, monthlyContribution, years, cdiAnnual]);
+        return simulateSimplePortfolio({
+            initialAmountBrl: initialInvestment,
+            monthlyContributionBrl: monthlyContribution,
+            annualRateBrl: cdiAnnual,
+            annualRateUsd: usdRate,
+            dollarizationPercentage: dollarization,
+            dollarAppreciationRate: appreciation,
+            currentDollarRate: spotRate,
+            years: years || 1
+        });
+    }, [initialInvestment, monthlyContribution, years, cdiAnnual, usdRate, dollarization, appreciation, spotRate]);
 
     // --- Simulação 2: Carteira Antifrágil (Motor Financeiro Externo) ---
     const antifragileProjection = useMemo(() => {
