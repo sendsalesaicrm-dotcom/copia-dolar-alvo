@@ -79,7 +79,7 @@ export function simulateSimplePortfolio(inputs: SimulationInputs): SimpleProject
     for (let absoluteMonth = 1; absoluteMonth <= totalMonths; absoluteMonth++) {
         const initialValue = deposits.reduce((sum, dep) => sum + dep.grossValue, 0);
         
-        const currentAporte = absoluteMonth === 1 ? 0 : inputs.monthlyContributionBrl;
+        const currentAporte = inputs.monthlyContributionBrl;
         if (currentAporte > 0) {
             deposits.push({ principal: currentAporte, grossValue: currentAporte, monthIn: absoluteMonth });
         }
@@ -122,12 +122,14 @@ export function simulateAntifragilePortfolio(inputs: SimulationInputs): Antifrag
     let accumulatedUsd = 0;
     let currentDollarRate = inputs.currentDollarRate;
     const monthlyRateBrl = Math.pow(1 + inputs.annualRateBrl, 1 / 12) - 1;
+    let historicalInvestedBrl = 0;
     
     const deposits: DepositLote[] = [];
     const annualData: AntifragileAnnualData[] = [];
     
     if (inputs.initialAmountBrl > 0) {
         deposits.push({ principal: inputs.initialAmountBrl, grossValue: inputs.initialAmountBrl, monthIn: 1 });
+        historicalInvestedBrl += inputs.initialAmountBrl;
     }
 
     for (let year = 1; year <= inputs.years; year++) {
@@ -141,10 +143,11 @@ export function simulateAntifragilePortfolio(inputs: SimulationInputs): Antifrag
         for (let month = 1; month <= 12; month++) {
             const absoluteMonth = ((year - 1) * 12) + month;
             
-            const currentAporte = absoluteMonth === 1 ? 0 : inputs.monthlyContributionBrl;
+            const currentAporte = inputs.monthlyContributionBrl;
             if (currentAporte > 0) {
                 deposits.push({ principal: currentAporte, grossValue: currentAporte, monthIn: absoluteMonth });
                 principalInjectedThisYear += currentAporte;
+                historicalInvestedBrl += currentAporte;
             }
             
             // Render
@@ -214,8 +217,8 @@ export function simulateAntifragilePortfolio(inputs: SimulationInputs): Antifrag
             balanceBrl: postExtractionValuation.totalNet,
             balanceUsd: accumulatedUsd,
             extractedForDollarization: extractedForDollar,
-            totalInvestedBrl: postExtractionValuation.totalPrincipal,
-            netProfitBrl: postExtractionValuation.totalNet - postExtractionValuation.totalPrincipal
+            totalInvestedBrl: historicalInvestedBrl,
+            netProfitBrl: postExtractionValuation.totalNet - historicalInvestedBrl
         });
     }
     

@@ -36,7 +36,7 @@ export const FlapEvolutionTable: React.FC<FlapEvolutionTableProps> = ({ data }) 
             <div className="p-8 border-b border-border bg-muted/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h3 className="text-xl font-black text-foreground">Detalhamento Mensal</h3>
-                    <p className="text-xs text-muted-foreground mt-1 uppercase font-bold tracking-widest">Evolução da Carteira Antifrágil</p>
+                    <p className="text-xs text-muted-foreground mt-1 uppercase font-bold tracking-widest">Projeção Tradicional (Apenas BRL)</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <div className="bg-[#ef6037]/10 text-[#ef6037] px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-tighter border border-[#ef6037]/20">
@@ -52,7 +52,7 @@ export const FlapEvolutionTable: React.FC<FlapEvolutionTableProps> = ({ data }) 
                             <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Mês</th>
                             <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Valor Inicial</th>
                             <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Valor + Aporte</th>
-                            <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Valor Bruto Antifrágil</th>
+                            <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Valor Bruto</th>
                             <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">% Acumulada</th>
                             <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-primary uppercase tracking-[0.2em]">Rendimento Real (Líquido)</th>
                         </tr>

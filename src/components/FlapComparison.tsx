@@ -1,9 +1,17 @@
 import React, { useMemo, useState } from 'react';
-import { TrendingUp, ArrowUpRight, ShieldCheck, Globe, DollarSign } from 'lucide-react';
+import { TrendingUp, ArrowUpRight, ShieldCheck, Globe, DollarSign, Info } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { FlapEvolutionTable } from './FlapEvolutionTable';
 import { AntifragileEvolutionTable } from './AntifragileEvolutionTable';
 import { simulateAntifragilePortfolio, simulateSimplePortfolio } from '../utils/finance';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog";
 
 interface FlapProps {
     initialInvestment: number;
@@ -91,6 +99,45 @@ export const FlapComparison: React.FC<FlapProps> = ({
         return absValue >= 1000000 ? smallSize : defaultSize;
     };
 
+    const renderTaxExplanation = () => (
+        <Dialog>
+            <DialogTrigger asChild>
+                <button className={`mt-2 flex items-center gap-1.5 p-1 -ml-1 rounded-md transition-colors ${theme === 'dark' ? 'hover:bg-white/10 text-white/40 hover:text-white' : 'hover:bg-black/10 text-white/50 hover:text-white'}`}>
+                    <Info className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-bold italic underline decoration-dotted underline-offset-2">Já descontado IR sobre o lucro</span>
+                </button>
+            </DialogTrigger>
+            <DialogContent className={theme === 'dark' ? 'bg-[#1a1a14] border-white/10 text-white' : 'bg-white text-slate-900 border-slate-200'}>
+                <DialogHeader>
+                    <DialogTitle>Como o Imposto de Renda é calculado?</DialogTitle>
+                    <DialogDescription className={theme === 'dark' ? 'text-white/60' : 'text-slate-500'}>
+                        Nossa simulação utiliza a regra <strong>FIFO</strong> (First-In, First-Out) com a tabela regressiva de juros.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 text-sm mt-2">
+                    <p>
+                        A cobrança do imposto incide <strong>apenas sobre o lucro</strong> (rendimento) de cada aporte individualizado, protegendo o seu capital investido.
+                    </p>
+                    <div className={`p-4 rounded-xl ${theme === 'dark' ? 'bg-white/5' : 'bg-slate-50'}`}>
+                        <div className="flex justify-between font-bold mb-3 text-xs uppercase tracking-wider opacity-70 border-b pb-2 border-white/10">
+                            <span>Prazo do Investimento</span>
+                            <span>Alíquota de IR</span>
+                        </div>
+                        <ul className="space-y-2">
+                            <li className="flex justify-between"><span>Até 180 dias (6 meses)</span> <strong>22,5%</strong></li>
+                            <li className="flex justify-between"><span>181 a 360 dias (1 ano)</span> <strong>20,0%</strong></li>
+                            <li className="flex justify-between"><span>361 a 720 dias (2 anos)</span> <strong>17,5%</strong></li>
+                            <li className="flex justify-between"><span>Acima de 720 dias (2 anos+)</span> <strong>15,0%</strong></li>
+                        </ul>
+                    </div>
+                    <p className={`text-xs ${theme === 'dark' ? 'text-white/60' : 'text-slate-500'}`}>
+                        <strong>O que isso significa na prática?</strong> Se você solicitar um resgate para usar ou dolarizar o patrimônio, o sistema irá resgatar primeiramente os lotes mais antigos (que possuem as menores alíquotas) operando igual à uma corretora real.
+                    </p>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+
     return (
         <div className="space-y-8">
             {/* --- Renderização Simples (BRL) --- */}
@@ -128,7 +175,7 @@ export const FlapComparison: React.FC<FlapProps> = ({
                                     <p className={`font-black tracking-tight text-white transition-all ${getFontSizeClass(projection.totalProfit, 'text-4xl sm:text-5xl', 'text-3xl sm:text-4xl')}`}>
                                         +{formatDynamicValue(projection.totalProfit, 'BRL')}
                                     </p>
-                                    <p className={`text-[10px] font-bold italic mt-2 ${theme === 'dark' ? 'text-white/40' : 'text-white/50'}`}>Já descontado IR sobre o lucro</p>
+                                    {renderTaxExplanation()}
                                 </div>
                             </div>
                         </div>
@@ -189,9 +236,12 @@ export const FlapComparison: React.FC<FlapProps> = ({
                                     <div className="w-2 h-2 rounded-full bg-white/50"></div>
                                     <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/70">Fração Brasil (BRL)</p>
                                 </div>
-                                <p className={`font-black text-white tracking-tighter transition-all ${getFontSizeClass(antifragileProjection.finalPatrimonyBrl, 'text-4xl', 'text-3xl')}`}>
-                                    {formatDynamicValue(antifragileProjection.finalPatrimonyBrl, 'BRL')}
-                                </p>
+                                <div className="flex flex-col items-start gap-1">
+                                    <p className={`font-black text-white tracking-tighter transition-all ${getFontSizeClass(antifragileProjection.finalPatrimonyBrl, 'text-4xl', 'text-3xl')}`}>
+                                        {formatDynamicValue(antifragileProjection.finalPatrimonyBrl, 'BRL')}
+                                    </p>
+                                    {renderTaxExplanation()}
+                                </div>
                             </div>
 
                             {/* Separador visual invisível só pra espaçar no grid caso a tela estique */}
