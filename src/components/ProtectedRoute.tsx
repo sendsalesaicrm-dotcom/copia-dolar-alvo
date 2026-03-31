@@ -30,7 +30,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminO
     return <div className="min-h-screen bg-background" />;
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !profile) {
     return <Navigate to="/login" replace />;
   }
 

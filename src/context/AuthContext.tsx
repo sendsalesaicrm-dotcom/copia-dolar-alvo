@@ -10,7 +10,7 @@ interface AuthContextType {
   loading: boolean;
   isAuthenticated: boolean;
   signOut: () => Promise<boolean>; // Retorna boolean
-  refreshProfile: (userId?: string) => Promise<void>;
+  refreshProfile: (userId?: string) => Promise<UserProfile | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,12 +37,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return data as UserProfile | null;
   }, []);
 
-  const refreshProfile = useCallback(async (userId?: string) => { // Adiciona userId opcional
-    const currentUserId = userId || user?.id; // Usa o userId fornecido ou o do estado
+  const refreshProfile = useCallback(async (userId?: string): Promise<UserProfile | null> => { 
+    const currentUserId = userId || user?.id; 
     if (currentUserId) {
       const fetchedProfile = await fetchProfile(currentUserId);
       setProfile(fetchedProfile);
+      return fetchedProfile;
     }
+    return null;
   }, [user, fetchProfile]);
 
   // 1. Initial Session Check (using getSession for immediate resolution)
@@ -54,7 +56,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session?.user) {
           setUser(session.user);
           const fetchedProfile = await fetchProfile(session.user.id);
-          setProfile(fetchedProfile);
+          if (!fetchedProfile) {
+              console.warn("Conta deletada detectada (Efeito Zumbi): Deslogando imediatamente.");
+              await supabase.auth.signOut();
+              setUser(null);
+              setProfile(null);
+          } else {
+              setProfile(fetchedProfile);
+          }
         } else {
           setUser(null);
           setProfile(null);
@@ -80,7 +89,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session?.user) {
           setUser(session.user);
           // Refresh profile in background for these events
-          refreshProfile(session.user.id);
+          refreshProfile(session.user.id).then((profil) => {
+              if (profil) return;
+              console.warn("Zumbi no listener: conta apagada.");
+              supabase.auth.signOut();
+          });
         }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
