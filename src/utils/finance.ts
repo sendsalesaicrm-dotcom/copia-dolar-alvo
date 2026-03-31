@@ -136,6 +136,17 @@ export function simulateAntifragilePortfolio(inputs: SimulationInputs): Antifrag
     }
 
     for (let year = 1; year <= inputs.years; year++) {
+        // 1. Rendimento do Saldo Antigo em USD
+        if (accumulatedUsd > 0) {
+            accumulatedUsd *= (1 + inputs.annualRateUsd);
+        }
+        
+        // 2. Apreciação Cambial ao longo deste ano (aplica-se a partir do Ano 2)
+        if (year > 1) {
+            currentDollarRate *= (1 + inputs.dollarAppreciationRate);
+        }
+
+        // 3. Geração de Lucro BRL
         // Obter Patrimônio Líquido Real ANTES de começar os meses deste ano
         // Se year == 1, valuation do mês 0 (tudo 0)
         const startOfYearValuation = getPortfolioValuation(deposits, ((year - 1) * 12));
@@ -199,17 +210,10 @@ export function simulateAntifragilePortfolio(inputs: SimulationInputs): Antifrag
                 }
             }
             
-            // Converte os reais líquidos p/ Dólar
+            // 4 e 5. Converte e Atualiza Saldo
+            // Converte os reais líquidos p/ Dólar pela cotação de agora e entra "frio" no ciclo
             const dollarsBought = extractedForDollar / currentDollarRate;
             accumulatedUsd += dollarsBought;
-        }
-        
-        // ----- Rende o Patrimônio Global (Efeito Antifrágil) -----
-        if (accumulatedUsd > 0) {
-            // Conta gringa rendeu
-            accumulatedUsd *= (1 + inputs.annualRateUsd);
-            // Dólar valorizou
-            currentDollarRate *= (1 + inputs.dollarAppreciationRate);
         }
         
         // Saldo Final BRL DEPOIS do Saque
