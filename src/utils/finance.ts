@@ -7,16 +7,19 @@ export interface DepositLote {
 }
 
 /**
- * Retorna a alíquota da Tabela Regressiva de IR baseada em meses (1 mês = ~30 dias)
- * Até 180 dias (6 meses): 22,5%
- * 181 a 360 dias (12 meses): 20%
- * 361 a 720 dias (24 meses): 17,5%
+ * Retorna a alíquota da Tabela Regressiva de IR baseada em dias.
+ * Transforma meses em dias utilizando a base do ano civil (365 dias / 12 = ~30.4167 dias por mês).
+ * Até 180 dias: 22,5%
+ * 181 a 360 dias: 20%
+ * 361 a 720 dias: 17,5%
  * Acima de 720 dias: 15%
  */
 export function getIRRate(monthsAged: number): number {
-    if (monthsAged <= 6) return 0.225;
-    if (monthsAged <= 12) return 0.20;
-    if (monthsAged <= 24) return 0.175;
+    const daysAged = monthsAged * 30.4167; // Converte meses para dias reais do ano civil
+
+    if (daysAged <= 180) return 0.225;
+    if (daysAged <= 360) return 0.20;
+    if (daysAged <= 720) return 0.175;
     return 0.15;
 }
 
