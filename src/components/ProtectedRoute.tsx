@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { showError } from '../utils/toast';
 
@@ -10,6 +10,7 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminOnly = false }) => {
   const { isAuthenticated, loading, profile } = useAuth();
+  const location = useLocation();
   const hasShownAdminDeniedToastRef = useRef(false);
 
   const isAdminDenied = adminOnly && profile?.role !== 'admin';
@@ -41,6 +42,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminO
   const isSuspended = !!profile?.deletion_scheduled_at;
   if (isSuspended) {
     return <Navigate to="/suspended" replace />;
+  }
+
+  // Handle onboarding restriction
+  const isOnboardingComplete = profile?.onboarding_completed;
+  if (!isOnboardingComplete && location.pathname !== '/onboarding' && profile?.role !== 'admin') {
+      return <Navigate to="/onboarding" replace />;
   }
 
   // Se autenticado (e admin, se adminOnly for true), permite o acesso.

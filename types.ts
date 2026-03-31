@@ -32,6 +32,20 @@ export interface UserProfile {
   use_flap_strategy: boolean;
 }
 
+export interface UserOnboarding {
+  id: string;
+  age_range: string;
+  monthly_income: string;
+  has_dollar_portfolio: string;
+  has_broker_account: string;
+  current_investments: string;
+  international_knowledge: string;
+  profession: string;
+  biggest_difficulty: string;
+  biggest_dream: string;
+  created_at: string;
+}
+
 export interface FinancialGoal {
   id: string;
   user_id: string;

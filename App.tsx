@@ -21,6 +21,7 @@ import MeuAssessorPage from './src/pages/MeuAssessorPage';
 import SuspendedPage from './src/pages/SuspendedPage';
 import FlapPage from './pages/FlapPage';
 import GastosPage from './src/pages/GastosPage';
+import OnboardingPage from './src/pages/OnboardingPage';
 
 const App: React.FC = () => {
   return (
@@ -110,6 +111,14 @@ const App: React.FC = () => {
                 <AppLayout>
                   <SuitabilityPage />
                 </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/onboarding"
+            element={
+              <ProtectedRoute>
+                  <OnboardingPage />
               </ProtectedRoute>
             }
           />
