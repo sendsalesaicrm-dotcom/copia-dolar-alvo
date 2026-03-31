@@ -53,9 +53,11 @@ export const AntifragileEvolutionTable: React.FC<AntifragileEvolutionTableProps>
                         <tr>
                             <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Ano</th>
                             <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Total Investido BRL</th>
-                            <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Lucro Líquido BRL</th>
+                            <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Lucro Gerado no Ano</th>
                             <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em]">Dolarizado (Saque)</th>
-                            <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-primary uppercase tracking-[0.2em]">Saldo Patrimônio BRL</th>
+                            <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-[#ef6037] uppercase tracking-[0.2em]">Retido no Brasil</th>
+                            <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Lucro Acumulado Retido</th>
+                            <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-[#ef6037] uppercase tracking-[0.2em]">Saldo Patrimônio BRL</th>
                             <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em]">Saldo Patrimônio USD</th>
                         </tr>
                     </thead>
@@ -70,13 +72,21 @@ export const AntifragileEvolutionTable: React.FC<AntifragileEvolutionTableProps>
                                 <td className="px-6 py-4 whitespace-nowrap text-xs text-muted-foreground font-medium">
                                     {formatCurrencyBrl(item.totalInvestedBrl)}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-xs text-foreground font-bold italic">
-                                    {formatCurrencyBrl(item.netProfitBrl)}
+                                <td className="px-6 py-4 whitespace-nowrap text-xs text-foreground font-medium">
+                                    {formatCurrencyBrl(item.yearlyGeneratedProfitBrl)}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <span className="text-xs font-black text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-md">
                                         -{formatCurrencyBrl(item.extractedForDollarization)}
                                     </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <span className="text-xs font-black text-[#ef6037] bg-[#ef6037]/10 px-2 py-1 rounded-md">
+                                        +{formatCurrencyBrl(item.yearlyGeneratedProfitBrl - item.extractedForDollarization)}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-xs text-foreground font-bold italic">
+                                    {formatCurrencyBrl(item.netProfitBrl)}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-black text-[#ef6037]">
                                     {formatCurrencyBrl(item.balanceBrl)}

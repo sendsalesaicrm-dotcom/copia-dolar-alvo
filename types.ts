@@ -106,6 +106,7 @@ export interface AntifragileAnnualData {
   extractedForDollarization: number;
   totalInvestedBrl: number;
   netProfitBrl: number;
+  yearlyGeneratedProfitBrl: number;
 }
 
 export interface AntifragileProjectionResult {

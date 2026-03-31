@@ -225,7 +225,8 @@ export function simulateAntifragilePortfolio(inputs: SimulationInputs): Antifrag
             balanceUsd: accumulatedUsd,
             extractedForDollarization: extractedForDollar,
             totalInvestedBrl: historicalInvestedBrl,
-            netProfitBrl: postExtractionValuation.totalNet - historicalInvestedBrl
+            netProfitBrl: postExtractionValuation.totalNet - historicalInvestedBrl,
+            yearlyGeneratedProfitBrl: Math.max(0, yearNetGrowth)
         });
     }
     
