@@ -223,7 +223,7 @@ export const AntifragileEvolutionTable: React.FC<AntifragileEvolutionTableProps>
                                                         <span className="font-bold">Saldo Final do Ano:</span>
                                                         <span className="font-black text-emerald-500">{formatCurrencyUsd(item.balanceUsd)}</span>
                                                     </div>
-                                                    <div className="text-[9px] sm:text-[10px] text-muted-foreground italic text-right pt-2 opacity-60">
+                                                    <div className="text-[11px] sm:text-[12px] text-muted-foreground italic text-right pt-2 opacity-80">
                                                         (Câmbio na compra: {formatCurrencyBrl(item.exchangeRateUsed || 0)})
                                                     </div>
                                                 </div>
