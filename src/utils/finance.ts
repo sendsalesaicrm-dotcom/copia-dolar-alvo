@@ -1,5 +1,14 @@
 import { SimulationInputs, AntifragileProjectionResult, AntifragileAnnualData, UsdLote } from '../../types';
 
+/**
+ * Arredonda um valor para 2 casas decimais (cêntimos/centavos).
+ * Simula o comportamento transacional real de uma corretora,
+ * evitando desvios de precisão de ponto flutuante em simulações longas.
+ */
+const roundToCent = (value: number): number => {
+    return Math.round(value * 100) / 100;
+};
+
 
 export interface DepositLote {
     principal: number;
@@ -92,7 +101,7 @@ export function simulateSimplePortfolio(inputs: SimulationInputs): SimpleProject
         
         // Rende o mês para todos os lotes ativos
         for (const dep of deposits) {
-            dep.grossValue *= (1 + monthlyRateBrl);
+            dep.grossValue = roundToCent(dep.grossValue * (1 + monthlyRateBrl));
         }
         
         // Calculo líquido da carteira após o rendimento deste mês
@@ -139,7 +148,7 @@ export function simulateAntifragilePortfolio(inputs: SimulationInputs): Antifrag
     for (let year = 1; year <= inputs.years; year++) {
         // 1. Rendimento do Saldo Antigo em USD (aplica juros individualmente a cada lote)
         for (const usdDep of usdDeposits) {
-            usdDep.amount *= (1 + inputs.annualRateUsd);
+            usdDep.amount = roundToCent(usdDep.amount * (1 + inputs.annualRateUsd));
         }
         
         // 2. Apreciação Cambial ao longo deste ano (aplica-se a partir do Ano 2)
@@ -167,7 +176,7 @@ export function simulateAntifragilePortfolio(inputs: SimulationInputs): Antifrag
             
             // Render
             for (const dep of deposits) {
-                dep.grossValue *= (1 + monthlyRateBrl);
+                dep.grossValue = roundToCent(dep.grossValue * (1 + monthlyRateBrl));
             }
         }
         
@@ -198,7 +207,7 @@ export function simulateAntifragilePortfolio(inputs: SimulationInputs): Antifrag
                 
                 if (availableNet <= amountToExtractNet) {
                     // Saca tudo desse lote (Esgotou)
-                    amountToExtractNet -= availableNet;
+                    amountToExtractNet = roundToCent(amountToExtractNet - availableNet);
                     dep.principal = 0;
                     dep.grossValue = 0;
                 } else {
@@ -206,17 +215,17 @@ export function simulateAntifragilePortfolio(inputs: SimulationInputs): Antifrag
                     const fractionToConsume = amountToExtractNet / availableNet;
                     amountToExtractNet = 0; // zeramos o alvo
                     
-                    dep.principal -= dep.principal * fractionToConsume;
-                    dep.grossValue -= dep.grossValue * fractionToConsume;
+                    dep.principal = roundToCent(dep.principal - dep.principal * fractionToConsume);
+                    dep.grossValue = roundToCent(dep.grossValue - dep.grossValue * fractionToConsume);
                 }
             }
             
             // 4 e 5. Converte e Atualiza Saldo
             // Converte os reais líquidos p/ Dólar pela cotação de agora e registra o lote
-            const dollarsBought = extractedForDollar / currentDollarRate;
+            const dollarsBought = roundToCent(extractedForDollar / currentDollarRate);
             usdDeposits.push({
                 yearIn: year,
-                investedBrl: extractedForDollar,
+                investedBrl: roundToCent(extractedForDollar),
                 buyRate: currentDollarRate,
                 amount: dollarsBought,
             });
