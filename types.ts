@@ -128,6 +128,11 @@ export interface AntifragileAnnualData {
   totalInvestedBrl: number;
   netProfitBrl: number;
   yearlyGeneratedProfitBrl: number;
+  // Campos para transparência do tooltip de Saldo USD
+  exchangeRateUsed: number;      // Câmbio com apreciação usado neste ano
+  usdBoughtThisYear: number;     // Dólares comprados com o valor sacado neste ano
+  usdInterestEarned: number;     // Juros ganhos sobre o saldo anterior em USD
+  previousUsdBalance: number;    // Saldo USD antes do rendimento e da nova compra
 }
 
 export interface AntifragileProjectionResult {

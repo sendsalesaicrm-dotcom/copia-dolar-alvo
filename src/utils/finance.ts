@@ -147,9 +147,13 @@ export function simulateAntifragilePortfolio(inputs: SimulationInputs): Antifrag
 
     for (let year = 1; year <= inputs.years; year++) {
         // 1. Rendimento do Saldo Antigo em USD (aplica juros individualmente a cada lote)
+        // Captura o saldo anterior ANTES de aplicar os juros (para o tooltip)
+        const previousUsdBalance = roundToCent(usdDeposits.reduce((sum, dep) => sum + dep.amount, 0));
         for (const usdDep of usdDeposits) {
             usdDep.amount = roundToCent(usdDep.amount * (1 + inputs.annualRateUsd));
         }
+        const usdBalanceAfterInterest = roundToCent(usdDeposits.reduce((sum, dep) => sum + dep.amount, 0));
+        const usdInterestEarned = roundToCent(usdBalanceAfterInterest - previousUsdBalance);
         
         // 2. Apreciação Cambial ao longo deste ano (aplica-se a partir do Ano 2)
         if (year > 1) {
@@ -189,6 +193,7 @@ export function simulateAntifragilePortfolio(inputs: SimulationInputs): Antifrag
         const yearNetGrowth = preExtractionNet - (startOfYearNet + principalInjectedThisYear);
         let extractedForDollar = 0;
         
+        let usdBoughtThisYear = 0;
         if (yearNetGrowth > 0) {
             extractedForDollar = yearNetGrowth * inputs.dollarizationPercentage;
             let amountToExtractNet = extractedForDollar;
@@ -223,6 +228,7 @@ export function simulateAntifragilePortfolio(inputs: SimulationInputs): Antifrag
             // 4 e 5. Converte e Atualiza Saldo
             // Converte os reais líquidos p/ Dólar pela cotação de agora e registra o lote
             const dollarsBought = roundToCent(extractedForDollar / currentDollarRate);
+            usdBoughtThisYear = dollarsBought;
             usdDeposits.push({
                 yearIn: year,
                 investedBrl: roundToCent(extractedForDollar),
@@ -244,7 +250,12 @@ export function simulateAntifragilePortfolio(inputs: SimulationInputs): Antifrag
             extractedForDollarization: extractedForDollar,
             totalInvestedBrl: historicalInvestedBrl,
             netProfitBrl: postExtractionValuation.totalNet - historicalInvestedBrl,
-            yearlyGeneratedProfitBrl: Math.max(0, yearNetGrowth)
+            yearlyGeneratedProfitBrl: Math.max(0, yearNetGrowth),
+            // Campos de transparência para o tooltip USD
+            exchangeRateUsed: currentDollarRate,
+            usdBoughtThisYear,
+            usdInterestEarned,
+            previousUsdBalance,
         });
     }
     

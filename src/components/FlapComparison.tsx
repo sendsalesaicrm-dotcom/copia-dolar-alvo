@@ -294,7 +294,7 @@ export const FlapComparison: React.FC<FlapProps> = ({
                 <FlapEvolutionTable data={projection.monthlyData} />
             )}
             {activeTab === 'antifragil' && (
-                <AntifragileEvolutionTable data={antifragileProjection.annualData} spotRate={spotRate} />
+                <AntifragileEvolutionTable data={antifragileProjection.annualData} spotRate={spotRate} usdRate={usdRate} />
             )}
         </div>
     );
