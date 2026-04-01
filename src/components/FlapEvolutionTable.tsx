@@ -8,6 +8,7 @@ interface FlapEvolutionTableProps {
 
 export const FlapEvolutionTable: React.FC<FlapEvolutionTableProps> = ({ data }) => {
     const [currentPage, setCurrentPage] = useState(1);
+    const [copied, setCopied] = useState(false);
     const itemsPerPage = 12;
 
     const totalPages = Math.ceil(data.length / itemsPerPage);
@@ -31,6 +32,23 @@ export const FlapEvolutionTable: React.FC<FlapEvolutionTableProps> = ({ data }) 
         }).format(value / 100);
     };
 
+    const handleCopy = () => {
+        const headers = ['Mês', 'Valor Inicial', 'Valor + Aporte', 'Valor Bruto', '% Acumulada', 'Rendimento Real (Líquido)'];
+        const rows = data.map(item => [
+            item.month,
+            formatCurrency(item.initialValue),
+            formatCurrency(item.valuePlusContribution),
+            formatCurrency(item.grossValue),
+            formatPercent(item.accumulatedYield),
+            formatCurrency(item.netValue),
+        ]);
+        const tsv = [headers, ...rows].map(r => r.join('\t')).join('\n');
+        navigator.clipboard.writeText(tsv).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        });
+    };
+
     return (
         <div className="mt-12 bg-card rounded-3xl shadow-xl border border-border overflow-hidden">
             <div className="p-8 border-b border-border bg-muted/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -39,6 +57,32 @@ export const FlapEvolutionTable: React.FC<FlapEvolutionTableProps> = ({ data }) 
                     <p className="text-xs text-muted-foreground mt-1 uppercase font-bold tracking-widest">Projeção Tradicional (Apenas BRL)</p>
                 </div>
                 <div className="flex items-center gap-3">
+                    <button
+                        onClick={handleCopy}
+                        title="Copiar tabela completa (Excel/Sheets)"
+                        className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-tighter border transition-all duration-300 ${
+                            copied
+                                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
+                                : 'bg-muted/50 text-muted-foreground border-border hover:bg-primary/10 hover:text-primary hover:border-primary/30'
+                        }`}
+                    >
+                        {copied ? (
+                            <>
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                                Copiado!
+                            </>
+                        ) : (
+                            <>
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" />
+                                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                                </svg>
+                                Copiar Tabela
+                            </>
+                        )}
+                    </button>
                     <div className="bg-[#ef6037]/10 text-[#ef6037] px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-tighter border border-[#ef6037]/20">
                         Página {currentPage} de {totalPages}
                     </div>

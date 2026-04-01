@@ -1,4 +1,5 @@
-import { SimulationInputs, AntifragileProjectionResult, AntifragileAnnualData } from '../../types';
+import { SimulationInputs, AntifragileProjectionResult, AntifragileAnnualData, UsdLote } from '../../types';
+
 
 export interface DepositLote {
     principal: number;
@@ -122,7 +123,7 @@ export function simulateSimplePortfolio(inputs: SimulationInputs): SimpleProject
  * Simula a carteira Antifrágil (BRL + USD) extraindo ganhos usando FIFO
  */
 export function simulateAntifragilePortfolio(inputs: SimulationInputs): AntifragileProjectionResult {
-    let accumulatedUsd = 0;
+    const usdDeposits: UsdLote[] = [];
     let currentDollarRate = inputs.currentDollarRate;
     const monthlyRateBrl = Math.pow(1 + inputs.annualRateBrl, 1 / 12) - 1;
     let historicalInvestedBrl = 0;
@@ -136,9 +137,9 @@ export function simulateAntifragilePortfolio(inputs: SimulationInputs): Antifrag
     }
 
     for (let year = 1; year <= inputs.years; year++) {
-        // 1. Rendimento do Saldo Antigo em USD
-        if (accumulatedUsd > 0) {
-            accumulatedUsd *= (1 + inputs.annualRateUsd);
+        // 1. Rendimento do Saldo Antigo em USD (aplica juros individualmente a cada lote)
+        for (const usdDep of usdDeposits) {
+            usdDep.amount *= (1 + inputs.annualRateUsd);
         }
         
         // 2. Apreciação Cambial ao longo deste ano (aplica-se a partir do Ano 2)
@@ -211,18 +212,26 @@ export function simulateAntifragilePortfolio(inputs: SimulationInputs): Antifrag
             }
             
             // 4 e 5. Converte e Atualiza Saldo
-            // Converte os reais líquidos p/ Dólar pela cotação de agora e entra "frio" no ciclo
+            // Converte os reais líquidos p/ Dólar pela cotação de agora e registra o lote
             const dollarsBought = extractedForDollar / currentDollarRate;
-            accumulatedUsd += dollarsBought;
+            usdDeposits.push({
+                yearIn: year,
+                investedBrl: extractedForDollar,
+                buyRate: currentDollarRate,
+                amount: dollarsBought,
+            });
         }
         
+        // Total de dólares acumulado (soma dos lotes)
+        const totalUsdBalance = usdDeposits.reduce((sum, dep) => sum + dep.amount, 0);
+
         // Saldo Final BRL DEPOIS do Saque
         const postExtractionValuation = getPortfolioValuation(deposits, endOfYearAbsoluteMonth);
         
         annualData.push({
             year,
             balanceBrl: postExtractionValuation.totalNet,
-            balanceUsd: accumulatedUsd,
+            balanceUsd: totalUsdBalance,
             extractedForDollarization: extractedForDollar,
             totalInvestedBrl: historicalInvestedBrl,
             netProfitBrl: postExtractionValuation.totalNet - historicalInvestedBrl,
@@ -232,11 +241,13 @@ export function simulateAntifragilePortfolio(inputs: SimulationInputs): Antifrag
     
     // Calcula o saldo final final
     const finalValuation = getPortfolioValuation(deposits, inputs.years * 12);
-    
+    const finalUsdBalance = usdDeposits.reduce((sum, dep) => sum + dep.amount, 0);
+
     return {
         finalPatrimonyBrl: finalValuation.totalNet,
-        finalPatrimonyUsd: accumulatedUsd,
-        equivalentTotalBrl: finalValuation.totalNet + (accumulatedUsd * currentDollarRate),
-        annualData
+        finalPatrimonyUsd: finalUsdBalance,
+        equivalentTotalBrl: finalValuation.totalNet + (finalUsdBalance * currentDollarRate),
+        annualData,
+        usdExtract: usdDeposits,
     };
 }

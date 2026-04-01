@@ -102,6 +102,13 @@ export interface GridValor {
 }
 
 // Interfaces for Antifragile Portfolio Simulator
+export interface UsdLote {
+  yearIn: number;        // Ano em que o aporte foi feito
+  investedBrl: number;   // Reais usados para comprar
+  buyRate: number;       // Cotação do dólar no momento da compra
+  amount: number;        // Saldo em dólares deste lote (cresce com juros anuais)
+}
+
 export interface SimulationInputs {
   initialAmountBrl: number;
   monthlyContributionBrl: number;
@@ -128,4 +135,5 @@ export interface AntifragileProjectionResult {
   finalPatrimonyUsd: number;
   equivalentTotalBrl: number;
   annualData: AntifragileAnnualData[];
+  usdExtract: UsdLote[];
 }
