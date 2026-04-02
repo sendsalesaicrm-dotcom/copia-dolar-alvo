@@ -10,11 +10,23 @@ const SignupPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (password !== confirmPassword) {
+      showError('As senhas não coincidem.');
+      return;
+    }
+
+    if (password.length < 6) {
+      showError('A senha deve ter no mínimo 6 caracteres.');
+      return;
+    }
+
     setLoading(true);
     const toastId = showLoading('Cadastrando...');
 
@@ -76,6 +88,19 @@ const SignupPage: React.FC = () => {
           placeholder="Mínimo 6 caracteres"
           icon={<Lock className="w-5 h-5 text-muted-foreground" />}
           type="password"
+          showPasswordToggle
+          required
+        />
+        <Input
+          id="confirmPassword"
+          label="Confirmar Senha"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          placeholder="Digite a senha novamente"
+          icon={<Lock className="w-5 h-5 text-muted-foreground" />}
+          type="password"
+          showPasswordToggle
+          required
         />
 
         <button
