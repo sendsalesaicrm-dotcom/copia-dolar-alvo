@@ -161,18 +161,18 @@ export const FlapComparison: React.FC<FlapProps> = ({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12">
                             <div className="space-y-3">
                                 <p className={`text-[11px] font-black uppercase tracking-[0.2em] ${theme === 'dark' ? 'text-white/60' : 'text-white/60'}`}>Patrimônio em {years} anos</p>
-                                <div className="flex items-center gap-4">
-                                    <p className={`font-black text-white tracking-tighter leading-none transition-all ${getFontSizeClass(projection.finalValue, 'text-5xl sm:text-6xl', 'text-4xl sm:text-5xl')}`}>
+                                <div className="flex items-center gap-2 sm:gap-4 flex-wrap sm:flex-nowrap">
+                                    <p className={`font-black text-white tracking-tighter leading-none transition-all break-words ${getFontSizeClass(projection.finalValue, 'text-4xl sm:text-5xl lg:text-6xl', 'text-3xl sm:text-4xl lg:text-5xl')}`}>
                                         {formatDynamicValue(projection.finalValue, 'BRL')}
                                     </p>
-                                    <ArrowUpRight className={`w-8 h-8 transition-all transform group-hover:translate-x-1 group-hover:-translate-y-1 ${theme === 'dark' ? 'text-white/40 group-hover:text-white' : 'text-white/40 group-hover:text-white'}`} />
+                                    <ArrowUpRight className={`w-6 h-6 sm:w-8 sm:h-8 transition-all transform group-hover:translate-x-1 group-hover:-translate-y-1 flex-shrink-0 ${theme === 'dark' ? 'text-white/40 group-hover:text-white' : 'text-white/40 group-hover:text-white'}`} />
                                 </div>
                             </div>
 
                             <div className="md:text-right space-y-3">
                                 <p className={`text-[11px] font-black uppercase tracking-[0.2em] ${theme === 'dark' ? 'text-white/60' : 'text-white/60'}`}>Lucro Líquido Brasil</p>
-                                <div className="flex flex-col md:items-end">
-                                    <p className={`font-black tracking-tight text-white transition-all ${getFontSizeClass(projection.totalProfit, 'text-4xl sm:text-5xl', 'text-3xl sm:text-4xl')}`}>
+                                <div className="flex flex-col md:items-end w-full max-w-full overflow-hidden">
+                                    <p className={`font-black tracking-tight text-white transition-all break-words ${getFontSizeClass(projection.totalProfit, 'text-3xl sm:text-4xl lg:text-5xl', 'text-2xl sm:text-3xl lg:text-4xl')}`}>
                                         +{formatDynamicValue(projection.totalProfit, 'BRL')}
                                     </p>
                                     {renderTaxExplanation()}
@@ -221,11 +221,11 @@ export const FlapComparison: React.FC<FlapProps> = ({
                             {/* Total Equivalente (em BRL) */}
                             <div className="space-y-3 md:col-span-3 border-b border-white/20 pb-8 relative">
                                 <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/70">Equivalente Global em Reais</p>
-                                <div className="flex items-center gap-4">
-                                    <p className={`font-black text-white tracking-tighter leading-none ${getFontSizeClass(antifragileProjection.equivalentTotalBrl, 'text-6xl sm:text-7xl', 'text-5xl sm:text-6xl')}`}>
+                                <div className="flex items-center gap-2 sm:gap-4 flex-wrap sm:flex-nowrap">
+                                    <p className={`font-black text-white tracking-tighter leading-none break-words ${getFontSizeClass(antifragileProjection.equivalentTotalBrl, 'text-5xl sm:text-6xl lg:text-7xl', 'text-4xl sm:text-5xl lg:text-6xl')}`}>
                                         {formatDynamicValue(antifragileProjection.equivalentTotalBrl, 'BRL')}
                                     </p>
-                                    <ArrowUpRight className="w-10 h-10 text-white/50" />
+                                    <ArrowUpRight className="w-8 h-8 sm:w-10 sm:h-10 text-white/50 flex-shrink-0" />
                                 </div>
                                 <p className="text-[10px] font-bold italic mt-2 text-white/60">Soma da Carteira BR + Carteira US convertida no Câmbio Projetado</p>
                             </div>
@@ -236,8 +236,8 @@ export const FlapComparison: React.FC<FlapProps> = ({
                                     <div className="w-2 h-2 rounded-full bg-white/50"></div>
                                     <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/70">Fração Brasil (BRL)</p>
                                 </div>
-                                <div className="flex flex-col items-start gap-1">
-                                    <p className={`font-black text-white tracking-tighter transition-all ${getFontSizeClass(antifragileProjection.finalPatrimonyBrl, 'text-4xl', 'text-3xl')}`}>
+                                <div className="flex flex-col items-start gap-1 w-full max-w-full overflow-hidden">
+                                    <p className={`font-black text-white tracking-tighter transition-all break-words ${getFontSizeClass(antifragileProjection.finalPatrimonyBrl, 'text-3xl sm:text-4xl', 'text-2xl sm:text-3xl')}`}>
                                         {formatDynamicValue(antifragileProjection.finalPatrimonyBrl, 'BRL')}
                                     </p>
                                     {renderTaxExplanation()}
@@ -255,7 +255,7 @@ export const FlapComparison: React.FC<FlapProps> = ({
                                     <DollarSign className="w-3 h-3 text-white/70" />
                                     <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/70">Fração Americana (USD)</p>
                                 </div>
-                                <p className={`font-black text-white tracking-tighter transition-all ${getFontSizeClass(antifragileProjection.finalPatrimonyUsd, 'text-4xl', 'text-3xl')}`}>
+                                <p className={`font-black text-white tracking-tighter transition-all break-words ${getFontSizeClass(antifragileProjection.finalPatrimonyUsd, 'text-3xl sm:text-4xl', 'text-2xl sm:text-3xl')}`}>
                                     {formatDynamicValue(antifragileProjection.finalPatrimonyUsd, 'USD')}
                                 </p>
                             </div>

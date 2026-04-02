@@ -18,7 +18,7 @@ const SignupPage: React.FC = () => {
     setLoading(true);
     const toastId = showLoading('Cadastrando...');
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -32,7 +32,14 @@ const SignupPage: React.FC = () => {
     setLoading(false);
 
     if (error) {
-      showError(error.message);
+      if (error.message.toLowerCase().includes('already registered')) {
+        showError('Este email já está cadastrado. Por favor, faça login.');
+      } else {
+        showError(error.message);
+      }
+    } else if (data?.user?.identities && data.user.identities.length === 0) {
+      // Supabase Email Enumeration Protection returns success with empty identities if email exists
+      showError('Este email já está cadastrado. Por favor, vá para a tela de Login.');
     } else {
       showSuccess('Cadastro realizado! Verifique seu email para confirmar sua conta.');
       navigate('/login');

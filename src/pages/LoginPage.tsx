@@ -23,7 +23,18 @@ const LoginPage: React.FC = () => {
     setLoading(false);
 
     if (error) {
-      showError(error.message);
+      if (error.message === 'Invalid login credentials' || error.message.toLowerCase().includes('credential')) {
+        // Verifica se o email existe para dar a mensagem correta ao usuário (bypassing the security generic message)
+        const { data: emailExists } = await supabase.rpc('check_email_exists', { lookup_email: email });
+        
+        if (!emailExists) {
+          showError('Email não cadastrado.');
+        } else {
+          showError('Email ou senha incorretos.');
+        }
+      } else {
+        showError(error.message);
+      }
     } else {
       showSuccess('Login realizado com sucesso!');
       navigate('/'); // Redireciona para a rota protegida
