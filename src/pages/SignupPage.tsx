@@ -91,17 +91,19 @@ const SignupPage: React.FC = () => {
           showPasswordToggle
           required
         />
-        <Input
-          id="confirmPassword"
-          label="Confirmar Senha"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          placeholder="Digite a senha novamente"
-          icon={<Lock className="w-5 h-5 text-muted-foreground" />}
-          type="password"
-          showPasswordToggle
-          required
-        />
+        <div className="pb-[14px]">
+          <Input
+            id="confirmPassword"
+            label="Confirmar Senha"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Digite a senha novamente"
+            icon={<Lock className="w-5 h-5 text-muted-foreground" />}
+            type="password"
+            showPasswordToggle
+            required
+          />
+        </div>
 
         <button
           type="submit"
